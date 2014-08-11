@@ -68,7 +68,7 @@ object Main extends App
 		desktop.add(
 			new JInternalFrame
 			{
-			val gui = new RectangularGridGUI
+			val gui = new RectangularGridGUI( this )
 			
 				setContentPane( gui )
 				pack
@@ -97,7 +97,7 @@ object Main extends App
 			}
 		} )
 
-	class RectangularGridGUI extends JPanel( new BorderLayout, true )
+	class RectangularGridGUI( f: JInternalFrame ) extends JPanel( new BorderLayout, true )
 	{
 		var gridWidth = 180
 		var gridHeight = 100
@@ -118,22 +118,7 @@ object Main extends App
 			new JPanel( new FlowLayout(FlowLayout.LEFT) )
 			{
 				add(
-					new JButton(
-						new AbstractAction( "New" )
-						{
-							def actionPerformed( e: ActionEvent )
-							{
-								if (timer eq null)
-								{
-									for (x <- 0 until gridWidth; y <- 0 until gridHeight)
-										u.current(x)(y) = 0
-								
-									GridPanel.repaint()
-								}
-							}
-						} ) )
-				add(
-					new JComboBox( Array("1/8", "1/7", "1/6", "1/5", "1/4", "1/3") )
+					new JComboBox( Array("1/8", "1/7", "1/6", "1/5", "1/4", "1/3", "0") )
 					{
 						addActionListener(
 							new ActionListener
@@ -143,7 +128,7 @@ object Main extends App
 								val prob =
 									Map(
 										"1/8" -> 1.0/8, "1/7" -> 1.0/7, "1/6" -> 1.0/6, "1/5" -> 1.0/5,
-										"1/4" -> 1.0/4, "1/3" -> 1.0/3 )( e.getSource.asInstanceOf[JComboBox[String]].getSelectedItem.asInstanceOf[String] )
+										"1/4" -> 1.0/4, "1/3" -> 1.0/3, "0" -> 0.0 )( e.getSource.asInstanceOf[JComboBox[String]].getSelectedItem.asInstanceOf[String] )
 										
 									RectangularUniverse.synchronized
 									{
@@ -189,6 +174,42 @@ object Main extends App
 							}
 						}
 					} )
+				add(
+					number( gridWidth, "width" )
+					{ n =>
+						if (n > 1 && n < 500)
+						{
+							gridWidth = n
+							GridPanel.updateSettings
+						}
+					} )
+				add(
+					number( gridHeight, "height" )
+					{ n =>
+						if (n > 1 && n < 500)
+						{
+							gridHeight = n
+							GridPanel.updateSettings
+						}
+					} )
+				add(
+					number( pointSize, "size" )
+					{ n =>
+						if (n >= 1 && n < 500)
+						{
+							pointSize = n
+							GridPanel.updateSettings
+						}
+					} )
+				add(
+					number( spacing, "space" )
+					{ n =>
+						if (n >= 0 && n < 500)
+						{
+							spacing = n
+							GridPanel.updateSettings
+						}
+					} )
 			}, BorderLayout.NORTH )
 		add( GridPanel )
 		GridPanel.settings
@@ -205,6 +226,19 @@ object Main extends App
 				}
 			}
 		
+		def number( init: Int, title: String )( fieldAction: Int => Unit ) =
+			new JTextField( init.toString, 5 ) with ActionListener
+			{
+				setBorder( BorderFactory.createTitledBorder(title) )
+				addActionListener( this )
+				
+				def actionPerformed( e: ActionEvent )
+				{
+					if (timer == null && getText.matches("\\d+"))
+						fieldAction( getText.toInt )
+				}
+			}
+					
 		def stop
 		{
 			if (timer ne null)
@@ -253,7 +287,15 @@ object Main extends App
 			def settings
 			{
 				setPreferredSize( (gridWidth*(pointSize + spacing) - spacing, gridHeight*(pointSize + spacing) - spacing) )
+			}
+			
+			def updateSettings
+			{
+				settings
+				RectangularUniverse.init( 0 )
 				revalidate
+				f.pack
+				f.repaint()
 			}
 			
 			def event2pos( e: MouseEvent ) = (e.getX/(pointSize + spacing), e.getY/(pointSize + spacing))
@@ -314,7 +356,7 @@ object Main extends App
 		object RectangularUniverse extends Universe
 		{
 			private var array: Array[Array[Array[Int]]] = _
-			/*private*/ var index: Int = _
+			private var index: Int = _
 			private var _current: Array[Array[Int]] = _
 			private var _next: Array[Array[Int]] = _
 			
