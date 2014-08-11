@@ -27,7 +27,7 @@ object Main extends App
 		new JFrame( "CALab Version 0.1" )
 		{
 		val screenSize = Toolkit.getDefaultToolkit.getScreenSize
-		val inset = 30
+		val inset = 20
 		
 			setBounds( inset, inset,
 				screenSize.width  - inset*2,
