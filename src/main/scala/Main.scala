@@ -69,8 +69,8 @@ object Main extends App
 
 	class RectangularGridGUI extends JPanel( new BorderLayout, true )
 	{
-		var gridWidth = 100
-		var gridHeight = 100
+		var gridWidth = 200
+		var gridHeight = 120
 		var planes = 2
 		var pointSize = 4
 		var spacing = 1
@@ -87,6 +87,21 @@ object Main extends App
 		add(
 			new JPanel( new FlowLayout(FlowLayout.LEFT) )
 			{
+				add(
+					new JButton(
+						new AbstractAction( "New" )
+						{
+							def actionPerformed( e: ActionEvent )
+							{
+								if (timer eq null)
+								{
+									for (x <- 0 until gridWidth; y <- 0 until gridHeight)
+										u.current(x)(y) = 0
+								
+									GridPanel.repaint()
+								}
+							}
+						} ) )
 				add(
 					new JButton(
 						new AbstractAction( "Random" )
@@ -206,7 +221,7 @@ object Main extends App
 			{
 				px = x
 				py = y
-				u.update( x, y, (u.read(x, y) + 1)%2 )
+				u.current(x)(y) = (u.read( x, y ) + 1)%2
 				repaint()
 			}
 		
@@ -219,11 +234,6 @@ object Main extends App
 					
 						flip( x, y )
 					}
-					
-// 					override def mouseReleased( e: MouseEvent )
-// 					{
-// 						pressed = false
-// 					}
 				} )
 			
 			addMouseMotionListener(
@@ -285,8 +295,6 @@ object Main extends App
 			def read( x: Int, y: Int ) = _current((x + gridWidth)%gridWidth)((y + gridHeight)%gridHeight)
 			
 			def write( x: Int, y: Int, v: Int ) = _next(x)(y) = v
-			
-			def update( x: Int, y: Int, v: Int ) = _current(x)(y) = v
 			
 			def tick
 			{
