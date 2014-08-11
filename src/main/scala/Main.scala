@@ -14,7 +14,11 @@ object Main extends App
 {
 	implicit def pair2dimension( pair: (Int, Int) ) = new Dimension( pair._1, pair._2 )
 	
-	lazy val desktop: JDesktopPane = new JDesktopPane
+	lazy val desktop: JDesktopPane =
+		new JDesktopPane
+		{
+			setBackground( DARK_GRAY )
+		}
 	val threadPool = new ScheduledThreadPoolExecutor( 10 )
 	
 	def mainFrame =
@@ -65,12 +69,12 @@ object Main extends App
 
 	class RectangularGridGUI extends JPanel( new BorderLayout, true )
 	{
-		var gridWidth = 500
-		var gridHeight = 500
+		var gridWidth = 100
+		var gridHeight = 100
 		var planes = 2
-		var pointSize = 1
-		var spacing = 0
-		var colors = Array( BLACK, WHITE )
+		var pointSize = 4
+		var spacing = 1
+		var colors = Array( DARK_GRAY.darker.darker, WHITE )
 		var rate = 20
 		var timer: ScheduledFuture[_] = null
 		var engine = new LifeEngine( Set(3), Set(2, 3) )
@@ -89,9 +93,12 @@ object Main extends App
 						{
 							def actionPerformed( e: ActionEvent )
 							{
-								for (x <- 0 until gridWidth; y <- 0 until gridHeight)
-									u.current(x)(y) = nextInt( 10 )/9
-									
+								RectangularUniverse.synchronized
+								{
+									for (x <- 0 until gridWidth; y <- 0 until gridHeight)
+										u.current(x)(y) = nextInt( 8 )/7
+								}
+								
 								GridPanel.repaint()
 							}
 						} ) )
@@ -118,6 +125,33 @@ object Main extends App
 								}
 							}
 						} ) )
+				add(
+					new JButton(
+						new AbstractAction( "Forward" )
+						{
+							def actionPerformed( e: ActionEvent )
+							{
+								if (timer eq null)
+								{
+									generation
+									GridPanel.repaint()
+								}
+							}
+						} ) )
+				add(
+					new JButton(
+						new AbstractAction( "Backward" )
+						{
+							def actionPerformed( e: ActionEvent )
+							{
+								if (timer eq null)
+								{
+									RectangularUniverse.revert
+									println( RectangularUniverse.index )
+									GridPanel.repaint()
+								}
+							}
+						} ) )
 			}, BorderLayout.NORTH )
 		add( GridPanel )
 		GridPanel.settings
@@ -128,13 +162,12 @@ object Main extends App
 				{
 					def run
 					{
-						compute
-						RectangularUniverse.tick
+						generation
 						GridPanel.repaint()
 					}
 				}, 0, rate, TimeUnit.MILLISECONDS )
 
-		def compute
+		def generation = RectangularUniverse.synchronized
 		{
 		val futures =
 			for (r <- (0 until gridWidth).grouped(gridWidth/threads))
@@ -151,6 +184,8 @@ object Main extends App
 					
 			for (f <- futures)
 				f.get
+				
+			RectangularUniverse.tick
 		}
 		
 		object GridPanel extends JPanel( true )
@@ -169,12 +204,14 @@ object Main extends App
 				
 //			val g2d = g.asInstanceOf[Graphics2D]
 				
+			val cur = u.current
+			
 				for (x <- 0 until gridWidth; y <- 0 until gridHeight)
 				{
 				val x1 = x*(pointSize + spacing)
 				val y1 = y*(pointSize + spacing)
 				
-					g setColor colors(u.current(x)(y))
+					g setColor colors(cur(x)(y))
 					g.fillRect( x1, y1, pointSize, pointSize )
 				}
 			}
@@ -183,8 +220,7 @@ object Main extends App
 		object RectangularUniverse extends Universe
 		{
 			private var array: Array[Array[Array[Int]]] = _
-			private var index: Int = _
-			
+			/*private*/ var index: Int = _
 			private var _current: Array[Array[Int]] = _
 			private var _next: Array[Array[Int]] = _
 			
@@ -199,6 +235,7 @@ object Main extends App
 
 				_current = array( 0 )
 				_next = array( 1 )
+				index = 0
 			}
 			
 			def current = _current
@@ -215,6 +252,13 @@ object Main extends App
 				index = (index + 1)%planes
 				_next = array( index )
 			}
+			
+			def revert
+			{
+				_next = _current
+				index = (index - 1 + planes)%planes
+				_current = array( index )
+			}
 		}
 	}
 }
@@ -224,7 +268,6 @@ trait Universe
 	def read( x: Int, y: Int ): Int
 			
 	def write( x: Int, y: Int, v: Int ): Unit
-
 }
 
 trait CAEngine extends ((Int, Int, Universe) => Unit)
