@@ -147,7 +147,6 @@ object Main extends App
 								if (timer eq null)
 								{
 									RectangularUniverse.revert
-									println( RectangularUniverse.index )
 									GridPanel.repaint()
 								}
 							}
@@ -198,6 +197,25 @@ object Main extends App
 				revalidate
 			}
 			
+// 			addMouseListener(
+// 				new MouseAdapter
+// 				{
+// 				var pos: (Int, Int) = _
+// 				var pressed = false
+// 				
+// 					def event2pos( e: MouseEvent ) = (e.x/(pointSize + spacing), e.y/(pointSize + spacing))
+// 					
+// 					override def mousePressed( e: MouseEvent )
+// 					{
+// 						if (!pressed)
+// 						{
+// 							pos = event2pos( e )
+// 							pressed = true
+// 							u.read
+// 						}
+// 					}
+// 				} )
+			
 			override def paintComponent( g: Graphics )
 			{
 				super.paintComponent( g )
@@ -235,7 +253,7 @@ object Main extends App
 
 				_current = array( 0 )
 				_next = array( 1 )
-				index = 0
+				index = 1
 			}
 			
 			def current = _current
@@ -253,11 +271,13 @@ object Main extends App
 				_next = array( index )
 			}
 			
+			def back = (index - 1 + planes)%planes
+			
 			def revert
 			{
 				_next = _current
-				index = (index - 1 + planes)%planes
-				_current = array( index )
+				index = back
+				_current = array( back )
 			}
 		}
 	}
