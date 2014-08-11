@@ -197,24 +197,46 @@ object Main extends App
 				revalidate
 			}
 			
-// 			addMouseListener(
-// 				new MouseAdapter
-// 				{
-// 				var pos: (Int, Int) = _
-// 				var pressed = false
-// 				
-// 					def event2pos( e: MouseEvent ) = (e.x/(pointSize + spacing), e.y/(pointSize + spacing))
-// 					
-// 					override def mousePressed( e: MouseEvent )
+			def event2pos( e: MouseEvent ) = (e.getX/(pointSize + spacing), e.getY/(pointSize + spacing))
+			
+		var px: Int = _
+		var py: Int = _
+			
+			def flip( x: Int, y: Int ) = RectangularUniverse.synchronized
+			{
+				px = x
+				py = y
+				u.update( x, y, (u.read(x, y) + 1)%2 )
+				repaint()
+			}
+		
+			addMouseListener(
+				new MouseAdapter
+				{
+					override def mousePressed( e: MouseEvent )
+					{
+					val (x, y) = event2pos( e )
+					
+						flip( x, y )
+					}
+					
+// 					override def mouseReleased( e: MouseEvent )
 // 					{
-// 						if (!pressed)
-// 						{
-// 							pos = event2pos( e )
-// 							pressed = true
-// 							u.read
-// 						}
+// 						pressed = false
 // 					}
-// 				} )
+				} )
+			
+			addMouseMotionListener(
+				new MouseAdapter
+				{
+					override def mouseDragged( e: MouseEvent )
+					{
+					val (x, y) = event2pos( e )
+					
+						if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight && (x != px || y != py))
+							flip( x, y )
+					}
+				} )
 			
 			override def paintComponent( g: Graphics )
 			{
@@ -263,6 +285,8 @@ object Main extends App
 			def read( x: Int, y: Int ) = _current((x + gridWidth)%gridWidth)((y + gridHeight)%gridHeight)
 			
 			def write( x: Int, y: Int, v: Int ) = _next(x)(y) = v
+			
+			def update( x: Int, y: Int, v: Int ) = _current(x)(y) = v
 			
 			def tick
 			{
