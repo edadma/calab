@@ -47,15 +47,15 @@ libraryDependencies ++= Seq(
 	
 //mainClass in (Compile, packageBin) := Some( "myproject.MyMain" )
 
-//mainClass in (Compile, run) := Some( "myproject.MyMain" )
+mainClass in (Compile, run) := Some( "ca.hyperreal.calab.Main" )
 
 //offline := true
 
 assemblySettings
 
-mainClass in assembly := Some( "funl.Main" )
+mainClass in assembly := Some( "ca.hyperreal.calab.Main" )
 
-jarName in assembly := "funl.jar"
+jarName in assembly := "calab-" + version.value + ".jar"
 
 
 LaikaPlugin.defaults

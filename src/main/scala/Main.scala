@@ -1,6 +1,6 @@
-package ca.hyperreal.cal
+package ca.hyperreal.calab
 
-import java.awt.{Dimension, Toolkit, BorderLayout, Graphics, FlowLayout, Graphics2D}
+import java.awt.{Dimension, Toolkit, BorderLayout, Graphics, FlowLayout, Graphics2D, Font}
 import java.awt.Color._
 import java.awt.event._
 import javax.swing._
@@ -21,9 +21,10 @@ object Main extends App
 			setBackground( DARK_GRAY )
 		}
 	val threadPool = new ScheduledThreadPoolExecutor( 20 )
+	val iconFont = Font.createFont( Font.TRUETYPE_FONT, Main.getClass.getResourceAsStream("fontawesome-webfont.ttf") ).deriveFont( 10f )
 	
 	def mainFrame =
-		new JFrame
+		new JFrame( "CALab Version 0.1" )
 		{
 		val screenSize = Toolkit.getDefaultToolkit.getScreenSize
 		val inset = 30
@@ -132,68 +133,77 @@ object Main extends App
 							}
 						} ) )
 				add(
-					new JButton(
-						new AbstractAction( "Random" )
-						{
-							def actionPerformed( e: ActionEvent )
+					new JComboBox( Array("1/8", "1/7", "1/6", "1/5", "1/4", "1/3") )
+					{
+						addActionListener(
+							new ActionListener
 							{
-								RectangularUniverse.synchronized
+								override def actionPerformed( e: ActionEvent )
 								{
-									for (x <- 0 until gridWidth; y <- 0 until gridHeight)
-										u.current(x)(y) = nextInt( 8 )/7
+								val prob =
+									Map(
+										"1/8" -> 1.0/8, "1/7" -> 1.0/7, "1/6" -> 1.0/6, "1/5" -> 1.0/5,
+										"1/4" -> 1.0/4, "1/3" -> 1.0/3 )( e.getSource.asInstanceOf[JComboBox[String]].getSelectedItem.asInstanceOf[String] )
+										
+									RectangularUniverse.synchronized
+									{
+										for (x <- 0 until gridWidth; y <- 0 until gridHeight)
+											u.current(x)(y) = if (nextDouble < prob) 1 else 0
+									}
+									
+									GridPanel.repaint()
 								}
-								
+							} )
+					} )
+				add(
+					icon( "\uf048" )
+					{ b =>
+						if (timer eq null)
+						{
+							RectangularUniverse.revert
+							GridPanel.repaint()
+						}
+					} )
+				add(
+					icon( "\uf04b" )
+					{ b =>
+						if (timer eq null)
+						{
+							timer = animate
+							b.setText( "\uf04d" )
+						}
+						else
+						{
+							stop
+							b.setText( "\uf04b" )
+						}
+					} )
+				add(
+					icon( "\uf051" )
+					{ b =>
+						{
+							if (timer eq null)
+							{
+								generation
 								GridPanel.repaint()
 							}
-						} ) )
-				add(
-					new JButton(
-						new AbstractAction( "Animate" )
-						{
-							def actionPerformed( e: ActionEvent )
-							{
-								if (timer eq null)
-									timer = animate
-							}
-						} ) )
-				add(
-					new JButton(
-						new AbstractAction( "Pause" )
-						{
-							def actionPerformed( e: ActionEvent )
-							{
-								stop
-							}
-						} ) )
-				add(
-					new JButton(
-						new AbstractAction( "Forward" )
-						{
-							def actionPerformed( e: ActionEvent )
-							{
-								if (timer eq null)
-								{
-									generation
-									GridPanel.repaint()
-								}
-							}
-						} ) )
-				add(
-					new JButton(
-						new AbstractAction( "Backward" )
-						{
-							def actionPerformed( e: ActionEvent )
-							{
-								if (timer eq null)
-								{
-									RectangularUniverse.revert
-									GridPanel.repaint()
-								}
-							}
-						} ) )
+						}
+					} )
 			}, BorderLayout.NORTH )
 		add( GridPanel )
 		GridPanel.settings
+		
+		def icon( name: String )( buttonAction: JButton => Unit ) =
+			new JButton( name ) with ActionListener
+			{
+				setFont( iconFont )
+				addActionListener( this )
+			
+				def actionPerformed( e: ActionEvent )
+				{
+					buttonAction( this )
+				}
+			}
 		
 		def stop
 		{
