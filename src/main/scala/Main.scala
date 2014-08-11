@@ -101,7 +101,7 @@ object Main extends App
 	{
 		var gridWidth = 100
 		var gridHeight = 100
-		var planes = 2
+		var planes = 100
 		var pointSize = 5
 		var spacing = 1
 		var colors = Array( DARK_GRAY.darker.darker, WHITE )
@@ -223,6 +223,20 @@ object Main extends App
 							{
 								stop
 								timer = animate
+							}
+						}
+					} )
+				add(
+					number( planes, "planes" )
+					{ n =>
+						if (n >= 2 && n <= 10000)
+						{
+							planes = n
+							
+							if (timer eq null)
+							{
+								RectangularUniverse.init( 0 )
+								GridPanel.repaint()
 							}
 						}
 					} )
@@ -374,7 +388,8 @@ object Main extends App
 			private var index: Int = _
 			private var _current: Array[Array[Int]] = _
 			private var _next: Array[Array[Int]] = _
-			
+			private var queue: Int = _
+				
 			init( 0 )
 			
 			def init( fill: Int )
@@ -387,6 +402,7 @@ object Main extends App
 				_current = array( 0 )
 				_next = array( 1 )
 				index = 1
+				queue = 0
 			}
 			
 			def current = _current
@@ -402,15 +418,20 @@ object Main extends App
 				_current = _next
 				index = (index + 1)%planes
 				_next = array( index )
+				queue = (queue + 1) min (planes - 1)
 			}
 			
 			def back = (index - 1 + planes)%planes
 			
 			def revert
 			{
-				_next = _current
-				index = back
-				_current = array( back )
+				if (queue > 0)
+				{
+					_next = _current
+					index = back
+					_current = array( back )
+					queue -= 1
+				}
 			}
 		}
 	}
