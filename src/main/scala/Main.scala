@@ -5,6 +5,7 @@ import java.awt.Color._
 import java.awt.event._
 import javax.swing._
 import javax.swing.SwingUtilities._
+import javax.swing.event._
 import java.util.concurrent.{ScheduledThreadPoolExecutor, TimeUnit, ScheduledFuture}
 
 import util.Random._
@@ -19,7 +20,7 @@ object Main extends App
 		{
 			setBackground( DARK_GRAY )
 		}
-	val threadPool = new ScheduledThreadPoolExecutor( 10 )
+	val threadPool = new ScheduledThreadPoolExecutor( 20 )
 	
 	def mainFrame =
 		new JFrame
@@ -40,21 +41,49 @@ object Main extends App
 						threadPool.shutdown
 						sys.exit( 0 )
 					}
-				}
-			)
+				} )
+			
+			setJMenuBar(
+				new JMenuBar
+				{
+					add(
+						new JMenu( "File" )
+						{
+							add(
+								new JMenuItem(
+									new AbstractAction( "New" )
+									{
+										def actionPerformed( e: ActionEvent )
+										{
+											createFrame
+										}
+									} ) )
+						} )
+				} )
 		}
 		
 	def createFrame
 	{
-	val frame = new JInternalFrame
-	
-		frame.setContentPane( new RectangularGridGUI )
-		frame.pack
-		frame.setIconifiable( true )
-		frame.setClosable( true )
-		frame.setVisible( true )
-		desktop.add( frame )
-		frame.setSelected( true )
+		desktop.add(
+			new JInternalFrame
+			{
+			val gui = new RectangularGridGUI
+			
+				setContentPane( gui )
+				pack
+				setIconifiable( true )
+				setClosable( true )
+				setVisible( true )
+				setSelected( true )
+				addInternalFrameListener(
+					new InternalFrameAdapter
+					{
+						override def internalFrameClosed( e: InternalFrameEvent )
+						{
+							gui.stop
+						}
+					} )
+			} )
 	}
 
 	invokeAndWait(
@@ -69,8 +98,8 @@ object Main extends App
 
 	class RectangularGridGUI extends JPanel( new BorderLayout, true )
 	{
-		var gridWidth = 200
-		var gridHeight = 120
+		var gridWidth = 180
+		var gridHeight = 100
 		var planes = 2
 		var pointSize = 4
 		var spacing = 1
@@ -133,11 +162,7 @@ object Main extends App
 						{
 							def actionPerformed( e: ActionEvent )
 							{
-								if (timer ne null)
-								{
-									timer.cancel( false )
-									timer = null
-								}
+								stop
 							}
 						} ) )
 				add(
@@ -169,6 +194,15 @@ object Main extends App
 			}, BorderLayout.NORTH )
 		add( GridPanel )
 		GridPanel.settings
+		
+		def stop
+		{
+			if (timer ne null)
+			{
+				timer.cancel( false )
+				timer = null
+			}
+		}
 		
 		def animate =
 			threadPool.scheduleAtFixedRate(
