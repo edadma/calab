@@ -99,13 +99,13 @@ object Main extends App
 
 	class RectangularGridGUI( f: JInternalFrame ) extends JPanel( new BorderLayout, true )
 	{
-		var gridWidth = 180
+		var gridWidth = 100
 		var gridHeight = 100
 		var planes = 2
-		var pointSize = 4
+		var pointSize = 5
 		var spacing = 1
 		var colors = Array( DARK_GRAY.darker.darker, WHITE )
-		var rate = 20
+		var period = 50
 		var timer: ScheduledFuture[_] = null
 		var engine = new LifeEngine( Set(3), Set(2, 3) )
 		var threads = 4
@@ -177,19 +177,21 @@ object Main extends App
 				add(
 					number( gridWidth, "width" )
 					{ n =>
-						if (n > 1 && n < 500)
+						if (timer == null && n > 1 && n <= 1000)
 						{
 							gridWidth = n
 							GridPanel.updateSettings
+							RectangularUniverse.init( 0 )
 						}
 					} )
 				add(
 					number( gridHeight, "height" )
 					{ n =>
-						if (n > 1 && n < 500)
+						if (timer == null && n > 1 && n <= 500)
 						{
 							gridHeight = n
 							GridPanel.updateSettings
+							RectangularUniverse.init( 0 )
 						}
 					} )
 				add(
@@ -208,6 +210,20 @@ object Main extends App
 						{
 							spacing = n
 							GridPanel.updateSettings
+						}
+					} )
+				add(
+					number( period, "period" )
+					{ n =>
+						if (n >= 1 && n <= 2000)
+						{
+							period = n
+							
+							if (timer ne null)
+							{
+								stop
+								timer = animate
+							}
 						}
 					} )
 			}, BorderLayout.NORTH )
@@ -234,7 +250,7 @@ object Main extends App
 				
 				def actionPerformed( e: ActionEvent )
 				{
-					if (timer == null && getText.matches("\\d+"))
+					if (getText.matches("\\d+"))
 						fieldAction( getText.toInt )
 				}
 			}
@@ -257,7 +273,7 @@ object Main extends App
 						generation
 						GridPanel.repaint()
 					}
-				}, 0, rate, TimeUnit.MILLISECONDS )
+				}, 0, period, TimeUnit.MILLISECONDS )
 
 		def generation = RectangularUniverse.synchronized
 		{
@@ -292,7 +308,6 @@ object Main extends App
 			def updateSettings
 			{
 				settings
-				RectangularUniverse.init( 0 )
 				revalidate
 				f.pack
 				f.repaint()
