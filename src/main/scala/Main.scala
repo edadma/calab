@@ -24,7 +24,7 @@ object Main extends App
 	val threadPool = new ScheduledThreadPoolExecutor( 20 )
 	val iconFont = Font.createFont( Font.TRUETYPE_FONT, Main.getClass.getResourceAsStream("fontawesome-webfont.ttf") ).deriveFont( 10f )
 	
-	def mainFrame =
+	lazy val mainFrame =
 		new JFrame( "CALab Version 0.1" )
 		{
 		val screenSize = Toolkit.getDefaultToolkit.getScreenSize
@@ -61,9 +61,50 @@ object Main extends App
 										}
 									} ) )
 						} )
+					add(
+						new JMenu( "Help" )
+						{
+							add(
+								new JMenuItem(
+									new AbstractAction( "About" )
+									{
+										def actionPerformed( e: ActionEvent )
+										{
+											aboutFrame.setVisible( true )
+										}
+									} ) )
+						} )
 				} )
 		}
-		
+	lazy val aboutFrame: JDialog =
+		new JDialog( mainFrame, "About DialogTest", true )
+		{
+			add(
+				new JLabel(
+					"""<html>
+						<h1><i>CALab Version 0.1</i></h1>
+						<hr>(c) 2014 Edward A. Maxedon, Sr.
+					</html>""" ), BorderLayout.CENTER )
+			add(
+				new JPanel
+				{
+					add(
+						new JButton("Ok")
+						{
+							addActionListener(
+								new ActionListener
+								{
+									def actionPerformed( e: ActionEvent )
+									{
+										aboutFrame.setVisible( false )
+									}
+								} )
+						} )
+				}, BorderLayout.SOUTH )
+			setSize( 250, 150 )
+			setLocationRelativeTo( mainFrame )
+		}
+	
 	def createFrame
 	{
 		desktop.add(
