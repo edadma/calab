@@ -1,6 +1,7 @@
 package ca.hyperreal.calab
 
 import java.awt.{Dimension, Toolkit, BorderLayout, Graphics, FlowLayout, Graphics2D, Font}
+import java.awt.Color
 import java.awt.Color._
 import java.awt.event._
 import javax.swing._
@@ -104,7 +105,6 @@ object Main extends App
 		var planes = 100
 		var pointSize = 5
 		var spacing = 1
-		var colors = Array( DARK_GRAY.darker.darker, WHITE )
 		var period = 50
 		var timer: ScheduledFuture[_] = null
 		var engine: CAEngine = new LifeEngine( Set(3), Set(2, 3) )
@@ -142,7 +142,7 @@ object Main extends App
 							} )
 					} )
 				add(
-					new JComboBox( Array(LifeEngine) )
+					new JComboBox( Array(LifeEngine, GenEngine) )
 					{
 						addActionListener(
 							new ActionListener
@@ -361,7 +361,15 @@ object Main extends App
 			{
 				px = x
 				py = y
-				u.current(x)(y) = (u.read( x, y ) + 1)%2
+				u.current(x)(y) =
+					{
+					val state = u.read( x, y )
+					
+						if (state == 0)
+							engine.alive
+						else
+							0
+					}
 				repaint()
 			}
 		
@@ -401,7 +409,7 @@ object Main extends App
 				val x1 = x*(pointSize + spacing)
 				val y1 = y*(pointSize + spacing)
 				
-					g setColor colors(cur(x)(y))
+					g setColor engine.colors(cur(x)(y))
 					g.fillRect( x1, y1, pointSize, pointSize )
 				}
 			}
@@ -470,8 +478,16 @@ trait Universe
 }
 
 trait CAEngineConstructor extends (String => CAEngine)
+{
+	def string( s: String ) = s.map( _.toString.toInt ).toSet
+}
 
 trait CAEngine extends ((Int, Int, Universe) => Unit)
+{
+	def colors: Seq[Color]
+	
+	def alive: Int
+}
 
 object LifeEngine extends CAEngineConstructor
 {
@@ -481,7 +497,7 @@ object LifeEngine extends CAEngineConstructor
 	{
 	val LIFE_RULE(b, s) = rule
 	
-		new LifeEngine( b.map(_.toString.toInt).toSet, s.map(_.toString.toInt).toSet )
+		new LifeEngine( string(b), string(s) )
 	}
 	
 	override def toString = "LifeEngine"
@@ -507,4 +523,54 @@ class LifeEngine( birth: Set[Int], survival: Set[Int] ) extends CAEngine
 		else
 			u.write( x, y, if (survival( neighbours )) 1 else 0 )
 	}
+	
+	val colors = Seq( DARK_GRAY.darker.darker, WHITE )
+	
+	val alive = 1
+}
+
+object GenEngine extends CAEngineConstructor
+{
+	val RULE = """(\d*)/(\d*)/(\d*)"""r
+	
+	def apply( rule: String ) =
+	{
+	val RULE(s, b, c) = rule
+	
+		new GenEngine( string(b), string(s), c.toInt )
+	}
+	
+	override def toString = "GenEngine"
+}
+
+class GenEngine( birth: Set[Int], survival: Set[Int], count: Int ) extends CAEngine
+{
+	val alive = count - 1
+	
+	def apply( x: Int, y: Int, u: Universe )
+	{
+		def living( x: Int, y: Int ) = if (u.read( x, y ) == alive) 1 else 0
+		
+	val state = u.read( x, y )
+	
+		if (state > 0 && state < alive)
+			u.write( x, y, state - 1 )
+		else
+		{
+		var neighbours = 0
+		
+			for (i <- -1 to 1)
+			{
+				neighbours += living( x + i, y - 1 )
+				neighbours += living( x + i, y + 1 )
+			}
+			
+			neighbours += living( x - 1, y )
+			neighbours += living( x + 1, y )
+			
+			u.write( x, y, if ((if (state == 0) birth else survival)( neighbours )) alive else 0 )
+		}
+	}
+	
+	val colors = Seq( DARK_GRAY.darker.darker, BLUE, WHITE )
 }
