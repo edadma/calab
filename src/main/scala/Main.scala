@@ -107,7 +107,8 @@ object Main extends App
 		var colors = Array( DARK_GRAY.darker.darker, WHITE )
 		var period = 50
 		var timer: ScheduledFuture[_] = null
-		var engine = new LifeEngine( Set(3), Set(2, 3) )
+		var engine: CAEngine = new LifeEngine( Set(3), Set(2, 3) )
+		var constructor: CAEngineConstructor = LifeEngine
 		var threads = 4
 		
 		RectangularUniverse.init( 0 )
@@ -139,6 +140,30 @@ object Main extends App
 									GridPanel.repaint()
 								}
 							} )
+					} )
+				add(
+					new JComboBox( Array(LifeEngine) )
+					{
+						addActionListener(
+							new ActionListener
+							{
+								override def actionPerformed( e: ActionEvent )
+								{
+									constructor = e.getSource.asInstanceOf[JComboBox[CAEngineConstructor]].getSelectedItem.asInstanceOf[CAEngineConstructor]
+								}
+							} )
+					} )
+				add(
+					new JTextField( "B2/S23", 5 ) with ActionListener
+					{
+						setBorder( BorderFactory.createTitledBorder("rule") )
+						addActionListener( this )
+						
+						def actionPerformed( e: ActionEvent )
+						{
+							if (timer == null)
+								engine = constructor( getText )
+						}
 					} )
 				add(
 					icon( "\uf048" )
@@ -444,7 +469,23 @@ trait Universe
 	def write( x: Int, y: Int, v: Int ): Unit
 }
 
+trait CAEngineConstructor extends (String => CAEngine)
+
 trait CAEngine extends ((Int, Int, Universe) => Unit)
+
+object LifeEngine extends CAEngineConstructor
+{
+	val LIFE_RULE = """B(\d*)/S(\d*)"""r
+	
+	def apply( rule: String ) =
+	{
+	val LIFE_RULE(b, s) = rule
+	
+		new LifeEngine( b.map(_.toString.toInt).toSet, s.map(_.toString.toInt).toSet )
+	}
+	
+	override def toString = "LifeEngine"
+}
 
 class LifeEngine( birth: Set[Int], survival: Set[Int] ) extends CAEngine
 {
@@ -460,7 +501,7 @@ class LifeEngine( birth: Set[Int], survival: Set[Int] ) extends CAEngine
 		
 		neighbours += u.read( x - 1, y )
 		neighbours += u.read( x + 1, y )
-		
+
 		if (u.read( x, y ) == 0)
 			u.write( x, y, if (birth( neighbours )) 1 else 0 )
 		else
