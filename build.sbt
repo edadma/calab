@@ -42,7 +42,7 @@ libraryDependencies ++= Seq(
 	)
 
 libraryDependencies ++= Seq(
-//	"local" %% "LOCAL_PROJECT" % "0.1"
+	"ca.hyperreal" %% "color" % "0.1"
 	)
 	
 //mainClass in (Compile, packageBin) := Some( "myproject.MyMain" )

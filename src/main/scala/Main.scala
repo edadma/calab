@@ -11,6 +11,8 @@ import java.util.concurrent.{ScheduledThreadPoolExecutor, TimeUnit, ScheduledFut
 
 import util.Random._
 
+import ca.hyperreal.color.HSL
+
 
 object Main extends App
 {
@@ -206,6 +208,7 @@ object Main extends App
 							{
 								engine = constructor( getText )
 								RectangularUniverse.init
+								GridPanel.repaint()
 							}
 						}
 					} )
@@ -616,17 +619,5 @@ class GenEngine( birth: Set[Int], survival: Set[Int], count: Int ) extends CAEng
 		}
 	}
 	
-	val colors =
-		{
-		var res = Seq( DARK_GRAY.darker.darker )
-		var middle = new Color( 10, 10, 100 )
-		
-			for (i <- 0 until count - 2)
-			{
-				res :+= middle
-				middle = middle.brighter
-			}
-			
-			res :+ WHITE
-		}
+	val colors = Seq( DARK_GRAY.darker.darker ) ++ HSL( .5, 1, 0 ).shading( count - 2, .2 ) :+ WHITE
 }
