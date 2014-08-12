@@ -111,7 +111,7 @@ object Main extends App
 		var constructor: CAEngineConstructor = LifeEngine
 		var threads = 4
 		
-		RectangularUniverse.init( 0 )
+		RectangularUniverse.init
 		
 		val u = RectangularUniverse
 		
@@ -162,7 +162,10 @@ object Main extends App
 						def actionPerformed( e: ActionEvent )
 						{
 							if (timer == null)
+							{
 								engine = constructor( getText )
+								RectangularUniverse.init
+							}
 						}
 					} )
 				add(
@@ -206,7 +209,7 @@ object Main extends App
 						{
 							gridWidth = n
 							GridPanel.updateSettings
-							RectangularUniverse.init( 0 )
+							RectangularUniverse.init
 						}
 					} )
 				add(
@@ -216,7 +219,7 @@ object Main extends App
 						{
 							gridHeight = n
 							GridPanel.updateSettings
-							RectangularUniverse.init( 0 )
+							RectangularUniverse.init
 						}
 					} )
 				add(
@@ -260,7 +263,7 @@ object Main extends App
 							
 							if (timer eq null)
 							{
-								RectangularUniverse.init( 0 )
+								RectangularUniverse.init
 								GridPanel.repaint()
 							}
 						}
@@ -423,14 +426,14 @@ object Main extends App
 			private var _next: Array[Array[Int]] = _
 			private var queue: Int = _
 				
-			init( 0 )
+			init
 			
-			def init( fill: Int )
+			def init
 			{
 				array = new Array[Array[Array[Int]]]( planes )
 				
 				for (i <- 0 until planes)
-					array( i ) = Array.fill( gridWidth, gridHeight )( fill )
+					array( i ) = Array.fill( gridWidth, gridHeight )( 0 )
 
 				_current = array( 0 )
 				_next = array( 1 )
