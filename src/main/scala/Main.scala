@@ -31,7 +31,7 @@ object Main extends App
 		val inset = 20
 		
 			setBounds( inset, inset,
-				screenSize.width  - inset*2,
+				screenSize.width  - inset*8,
 				screenSize.height - inset*2 )
 			createFrame
 			setContentPane( desktop )
@@ -134,7 +134,7 @@ object Main extends App
 									RectangularUniverse.synchronized
 									{
 										for (x <- 0 until gridWidth; y <- 0 until gridHeight)
-											u.current(x)(y) = if (nextDouble < prob) 1 else 0
+											u.current(x)(y) = if (nextDouble < prob) engine.alive else 0
 									}
 									
 									GridPanel.repaint()
@@ -154,7 +154,7 @@ object Main extends App
 							} )
 					} )
 				add(
-					new JTextField( "B2/S23", 5 ) with ActionListener
+					new JTextField( "B3/S23", 5 ) with ActionListener
 					{
 						setBorder( BorderFactory.createTitledBorder("rule") )
 						addActionListener( this )
@@ -500,7 +500,7 @@ object LifeEngine extends CAEngineConstructor
 		new LifeEngine( string(b), string(s) )
 	}
 	
-	override def toString = "LifeEngine"
+	override def toString = "Life"
 }
 
 class LifeEngine( birth: Set[Int], survival: Set[Int] ) extends CAEngine
@@ -518,10 +518,7 @@ class LifeEngine( birth: Set[Int], survival: Set[Int] ) extends CAEngine
 		neighbours += u.read( x - 1, y )
 		neighbours += u.read( x + 1, y )
 
-		if (u.read( x, y ) == 0)
-			u.write( x, y, if (birth( neighbours )) 1 else 0 )
-		else
-			u.write( x, y, if (survival( neighbours )) 1 else 0 )
+		u.write( x, y, if ((if (u.read( x, y ) == 0) birth else survival)( neighbours )) 1 else 0 )
 	}
 	
 	val colors = Seq( DARK_GRAY.darker.darker, WHITE )
@@ -540,7 +537,7 @@ object GenEngine extends CAEngineConstructor
 		new GenEngine( string(b), string(s), c.toInt )
 	}
 	
-	override def toString = "GenEngine"
+	override def toString = "Gen"
 }
 
 class GenEngine( birth: Set[Int], survival: Set[Int], count: Int ) extends CAEngine
@@ -568,9 +565,24 @@ class GenEngine( birth: Set[Int], survival: Set[Int], count: Int ) extends CAEng
 			neighbours += living( x - 1, y )
 			neighbours += living( x + 1, y )
 			
-			u.write( x, y, if ((if (state == 0) birth else survival)( neighbours )) alive else 0 )
+			if (state == 0)
+				u.write( x, y, if (birth( neighbours )) alive else 0 )
+			else
+				u.write( x, y, if (survival( neighbours )) alive else alive - 1 )
 		}
 	}
 	
-	val colors = Seq( DARK_GRAY.darker.darker, BLUE, WHITE )
+	val colors =
+		{
+		var res = Seq( DARK_GRAY.darker.darker )
+		var middle = new Color( 10, 10, 100 )
+		
+			for (i <- 0 until count - 2)
+			{
+				res :+= middle
+				middle = middle.brighter
+			}
+			
+			res :+ WHITE
+		}
 }
