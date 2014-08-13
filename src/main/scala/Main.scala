@@ -203,10 +203,15 @@ object Main extends App
 								{
 									if (timer == null)
 									{
-										engine = constructor( getText )
-										title
-										RectangularUniverse.init
-										GridPanel.repaint()
+										constructor( getText ) match
+										{
+											case None =>
+											case Some( c ) =>
+												engine = c
+												title
+												RectangularUniverse.init
+												GridPanel.repaint()
+										}
 									}
 								}
 							} )
@@ -538,7 +543,7 @@ trait Universe
 	def write( x: Int, y: Int, v: Int ): Unit
 }
 
-trait CAEngineConstructor extends (String => CAEngine)
+trait CAEngineConstructor extends (String => Option[CAEngine])
 {
 	def string( s: String ) = s.map( _.toString.toInt ).toSet
 }
@@ -552,13 +557,18 @@ trait CAEngine extends ((Int, Int, Universe) => Unit)
 
 object LifeEngine extends CAEngineConstructor
 {
-	val LIFE_RULE = """B(\d*)/S(\d*)"""r
+	val RULE = """B(\d*)/S(\d*)"""r
 	
 	def apply( rule: String ) =
 	{
-	val LIFE_RULE(b, s) = rule
-	
-		new LifeEngine( string(b), string(s) )
+		if (RULE.pattern.matcher( rule ).matches)
+		{
+		val RULE(b, s) = rule
+		
+			Some( new LifeEngine(string(b), string(s)) )
+		}
+		else
+			None
 	}
 	
 	override def toString = "Life"
@@ -595,9 +605,14 @@ object GenEngine extends CAEngineConstructor
 	
 	def apply( rule: String ) =
 	{
-	val RULE(s, b, c) = rule
-	
-		new GenEngine( string(b), string(s), c.toInt )
+		if (RULE.pattern.matcher( rule ).matches)
+		{
+		val RULE(s, b, c) = rule
+		
+			Some( new GenEngine(string(b), string(s), c.toInt) )
+		}
+		else
+			None
 	}
 	
 	override def toString = "Gen"
@@ -636,4 +651,6 @@ class GenEngine( birth: Set[Int], survival: Set[Int], count: Int ) extends CAEng
 	}
 	
 	val colors = Seq( DARK_GRAY.darker.darker ) ++ HSL( .55, 1, 0 ).shading( count - 2, .2 ) :+ WHITE
+	
+	override def toString = s"""Generations [birth: {${birth.toList.sorted.mkString(",")}}, survial: {${survival.toList.sorted.mkString(",")}}, count: $count]"""
 }
