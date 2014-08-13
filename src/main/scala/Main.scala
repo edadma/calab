@@ -619,5 +619,5 @@ class GenEngine( birth: Set[Int], survival: Set[Int], count: Int ) extends CAEng
 		}
 	}
 	
-	val colors = Seq( DARK_GRAY.darker.darker ) ++ HSL( .5, 1, 0 ).shading( count - 2, .2 ) :+ WHITE
+	val colors = Seq( DARK_GRAY.darker.darker ) ++ HSL( .55, 1, 0 ).shading( count - 2, .2 ) :+ WHITE
 }
