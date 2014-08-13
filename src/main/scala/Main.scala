@@ -35,15 +35,14 @@ object Main extends App
 			setBounds( inset, inset,
 				screenSize.width  - inset*8,
 				screenSize.height - inset*2 )
-			createFrame
+			desktop.add( new RectangularGridFrame )
 			setContentPane( desktop )
 			addWindowListener(
 				new WindowAdapter
 				{
 					override def windowClosing( e: WindowEvent )
 					{
-						threadPool.shutdown
-						sys.exit( 0 )
+						quit
 					}
 				} )
 			
@@ -55,11 +54,24 @@ object Main extends App
 						{
 							add(
 								new JMenuItem(
+									new AbstractAction( "Quit" )
+									{
+										def actionPerformed( e: ActionEvent )
+										{
+											quit
+										}
+									} ) )
+						} )
+					add(
+						new JMenu( "Grid" )
+						{
+							add(
+								new JMenuItem(
 									new AbstractAction( "New" )
 									{
 										def actionPerformed( e: ActionEvent )
 										{
-											createFrame
+											desktop.add( new RectangularGridFrame )
 										}
 									} ) )
 						} )
@@ -107,28 +119,10 @@ object Main extends App
 			setLocationRelativeTo( mainFrame )
 		}
 	
-	def createFrame
+	def quit
 	{
-		desktop.add(
-			new JInternalFrame
-			{
-			val gui = new RectangularGridGUI( this )
-			
-				setContentPane( gui )
-				pack
-				setIconifiable( true )
-				setClosable( true )
-				setVisible( true )
-				setSelected( true )
-				addInternalFrameListener(
-					new InternalFrameAdapter
-					{
-						override def internalFrameClosed( e: InternalFrameEvent )
-						{
-							gui.stop
-						}
-					} )
-			} )
+		threadPool.shutdown
+		sys.exit( 0 )
 	}
 
 	invokeAndWait(
@@ -141,377 +135,397 @@ object Main extends App
 			}
 		} )
 
-	class RectangularGridGUI( f: JInternalFrame ) extends JPanel( new BorderLayout, true )
+	class RectangularGridFrame extends JInternalFrame
 	{
-		var gridWidth = 100
-		var gridHeight = 100
-		var planes = 100
-		var pointSize = 5
-		var spacing = 1
-		var period = 50
 		var timer: ScheduledFuture[_] = null
-		var engine: CAEngine = new LifeEngine( Set(3), Set(2, 3) )
-		var constructor: CAEngineConstructor = LifeEngine
-		var threads = 4
 		
-		RectangularUniverse.init
-		
-		val u = RectangularUniverse
-		
-		add(
-			new JPanel( new FlowLayout(FlowLayout.LEFT) )
+		setContentPane(
+			new JPanel( new BorderLayout, true )
 			{
+				var gridWidth = 100
+				var gridHeight = 100
+				var planes = 100
+				var pointSize = 5
+				var spacing = 1
+				var period = 50
+				var engine: CAEngine = new LifeEngine( Set(3), Set(2, 3) )
+				var constructor: CAEngineConstructor = LifeEngine
+				var threads = 4
+				
+				RectangularUniverse.init
+				title
+				
 				add(
-					new JComboBox( Array("1/8", "1/7", "1/6", "1/5", "1/4", "1/3", "0") )
+					new JPanel( new FlowLayout(FlowLayout.LEFT) )
 					{
-						addActionListener(
-							new ActionListener
+						add(
+							new JComboBox( Array("1/8", "1/7", "1/6", "1/5", "1/4", "1/3", "0") )
 							{
-								override def actionPerformed( e: ActionEvent )
-								{
-								val prob =
-									Map(
-										"1/8" -> 1.0/8, "1/7" -> 1.0/7, "1/6" -> 1.0/6, "1/5" -> 1.0/5,
-										"1/4" -> 1.0/4, "1/3" -> 1.0/3, "0" -> 0.0 )( e.getSource.asInstanceOf[JComboBox[String]].getSelectedItem.asInstanceOf[String] )
-										
-									RectangularUniverse.synchronized
+								addActionListener(
+									new ActionListener
 									{
-										for (x <- 0 until gridWidth; y <- 0 until gridHeight)
-											u.current(x)(y) = if (nextDouble < prob) engine.alive else 0
+										override def actionPerformed( e: ActionEvent )
+										{
+										val prob =
+											Map(
+												"1/8" -> 1.0/8, "1/7" -> 1.0/7, "1/6" -> 1.0/6, "1/5" -> 1.0/5,
+												"1/4" -> 1.0/4, "1/3" -> 1.0/3, "0" -> 0.0 )( e.getSource.asInstanceOf[JComboBox[String]].getSelectedItem.asInstanceOf[String] )
+												
+											RectangularUniverse.synchronized
+											{
+												for (x <- 0 until gridWidth; y <- 0 until gridHeight)
+													RectangularUniverse.current(x)(y) = if (nextDouble < prob) engine.alive else 0
+											}
+											
+											GridPanel.repaint()
+										}
+									} )
+							} )
+						add(
+							new JComboBox( Array(LifeEngine, GenEngine) )
+							{
+								addActionListener(
+									new ActionListener
+									{
+										override def actionPerformed( e: ActionEvent )
+										{
+											constructor = e.getSource.asInstanceOf[JComboBox[CAEngineConstructor]].getSelectedItem.asInstanceOf[CAEngineConstructor]
+										}
+									} )
+							} )
+						add(
+							new JTextField( "B3/S23", 5 ) with ActionListener
+							{
+								setBorder( BorderFactory.createTitledBorder("rule") )
+								addActionListener( this )
+								
+								def actionPerformed( e: ActionEvent )
+								{
+									if (timer == null)
+									{
+										engine = constructor( getText )
+										title
+										RectangularUniverse.init
+										GridPanel.repaint()
 									}
-									
+								}
+							} )
+						add(
+							icon( "\uf048" )
+							{ b =>
+								if (timer eq null)
+								{
+									RectangularUniverse.revert
 									GridPanel.repaint()
 								}
 							} )
-					} )
-				add(
-					new JComboBox( Array(LifeEngine, GenEngine) )
-					{
-						addActionListener(
-							new ActionListener
-							{
-								override def actionPerformed( e: ActionEvent )
+						add(
+							icon( "\uf04b" )
+							{ b =>
+								if (timer eq null)
 								{
-									constructor = e.getSource.asInstanceOf[JComboBox[CAEngineConstructor]].getSelectedItem.asInstanceOf[CAEngineConstructor]
+									timer = animate
+									b.setText( "\uf04d" )
+								}
+								else
+								{
+									stop
+									b.setText( "\uf04b" )
 								}
 							} )
-					} )
-				add(
-					new JTextField( "B3/S23", 5 ) with ActionListener
+						add(
+							icon( "\uf051" )
+							{ b =>
+								{
+									if (timer eq null)
+									{
+										generation
+										GridPanel.repaint()
+									}
+								}
+							} )
+						add(
+							number( gridWidth, "width" )
+							{ n =>
+								if (timer == null && n > 1 && n <= 1000)
+								{
+									gridWidth = n
+									GridPanel.updateSettings
+									RectangularUniverse.init
+								}
+							} )
+						add(
+							number( gridHeight, "height" )
+							{ n =>
+								if (timer == null && n > 1 && n <= 500)
+								{
+									gridHeight = n
+									GridPanel.updateSettings
+									RectangularUniverse.init
+								}
+							} )
+						add(
+							number( pointSize, "size" )
+							{ n =>
+								if (n >= 1 && n < 500)
+								{
+									pointSize = n
+									GridPanel.updateSettings
+								}
+							} )
+						add(
+							number( spacing, "space" )
+							{ n =>
+								if (n >= 0 && n < 500)
+								{
+									spacing = n
+									GridPanel.updateSettings
+								}
+							} )
+						add(
+							number( period, "period" )
+							{ n =>
+								if (n >= 1 && n <= 2000)
+								{
+									period = n
+									
+									if (timer ne null)
+									{
+										stop
+										timer = animate
+									}
+								}
+							} )
+						add(
+							number( planes, "planes" )
+							{ n =>
+								if (n >= 2 && n <= 10000)
+								{
+									planes = n
+									
+									if (timer eq null)
+									{
+										RectangularUniverse.init
+										GridPanel.repaint()
+									}
+								}
+							} )
+					}, BorderLayout.NORTH )
+				add( GridPanel )
+				GridPanel.settings
+				
+				def icon( name: String )( buttonAction: JButton => Unit ) =
+					new JButton( name ) with ActionListener
 					{
-						setBorder( BorderFactory.createTitledBorder("rule") )
+						setFont( iconFont )
+						addActionListener( this )
+					
+						def actionPerformed( e: ActionEvent )
+						{
+							buttonAction( this )
+						}
+					}
+				
+				def number( init: Int, title: String )( fieldAction: Int => Unit ) =
+					new JTextField( init.toString, 5 ) with ActionListener
+					{
+						setBorder( BorderFactory.createTitledBorder(title) )
 						addActionListener( this )
 						
 						def actionPerformed( e: ActionEvent )
 						{
-							if (timer == null)
-							{
-								engine = constructor( getText )
-								RectangularUniverse.init
-								GridPanel.repaint()
-							}
+							if (getText.matches("\\d+"))
+								fieldAction( getText.toInt )
 						}
-					} )
-				add(
-					icon( "\uf048" )
-					{ b =>
-						if (timer eq null)
+					}
+				
+				def animate =
+					threadPool.scheduleAtFixedRate(
+						new Runnable
 						{
-							RectangularUniverse.revert
-							GridPanel.repaint()
-						}
-					} )
-				add(
-					icon( "\uf04b" )
-					{ b =>
-						if (timer eq null)
-						{
-							timer = animate
-							b.setText( "\uf04d" )
-						}
-						else
-						{
-							stop
-							b.setText( "\uf04b" )
-						}
-					} )
-				add(
-					icon( "\uf051" )
-					{ b =>
-						{
-							if (timer eq null)
+							def run
 							{
 								generation
 								GridPanel.repaint()
 							}
-						}
-					} )
-				add(
-					number( gridWidth, "width" )
-					{ n =>
-						if (timer == null && n > 1 && n <= 1000)
-						{
-							gridWidth = n
-							GridPanel.updateSettings
-							RectangularUniverse.init
-						}
-					} )
-				add(
-					number( gridHeight, "height" )
-					{ n =>
-						if (timer == null && n > 1 && n <= 500)
-						{
-							gridHeight = n
-							GridPanel.updateSettings
-							RectangularUniverse.init
-						}
-					} )
-				add(
-					number( pointSize, "size" )
-					{ n =>
-						if (n >= 1 && n < 500)
-						{
-							pointSize = n
-							GridPanel.updateSettings
-						}
-					} )
-				add(
-					number( spacing, "space" )
-					{ n =>
-						if (n >= 0 && n < 500)
-						{
-							spacing = n
-							GridPanel.updateSettings
-						}
-					} )
-				add(
-					number( period, "period" )
-					{ n =>
-						if (n >= 1 && n <= 2000)
-						{
-							period = n
-							
-							if (timer ne null)
-							{
-								stop
-								timer = animate
-							}
-						}
-					} )
-				add(
-					number( planes, "planes" )
-					{ n =>
-						if (n >= 2 && n <= 10000)
-						{
-							planes = n
-							
-							if (timer eq null)
-							{
-								RectangularUniverse.init
-								GridPanel.repaint()
-							}
-						}
-					} )
-			}, BorderLayout.NORTH )
-		add( GridPanel )
-		GridPanel.settings
-		
-		def icon( name: String )( buttonAction: JButton => Unit ) =
-			new JButton( name ) with ActionListener
-			{
-				setFont( iconFont )
-				addActionListener( this )
-			
-				def actionPerformed( e: ActionEvent )
+						}, 0, period, TimeUnit.MILLISECONDS )
+
+				def generation = RectangularUniverse.synchronized
 				{
-					buttonAction( this )
+				val futures =
+					for (r <- (0 until gridWidth).grouped(gridWidth/threads))
+						yield
+							threadPool.submit(
+								new Runnable
+								{
+									def run
+									{
+										for (x <- r; y <- 0 until gridHeight)
+											engine( x, y, RectangularUniverse )
+									}
+								} )
+							
+					for (f <- futures)
+						f.get
+						
+					RectangularUniverse.tick
 				}
-			}
-		
-		def number( init: Int, title: String )( fieldAction: Int => Unit ) =
-			new JTextField( init.toString, 5 ) with ActionListener
-			{
-				setBorder( BorderFactory.createTitledBorder(title) )
-				addActionListener( this )
 				
-				def actionPerformed( e: ActionEvent )
+				object GridPanel extends JPanel( true )
 				{
-					if (getText.matches("\\d+"))
-						fieldAction( getText.toInt )
-				}
-			}
+					setBackground( BLACK )
 					
+					def settings
+					{
+						setPreferredSize( (gridWidth*(pointSize + spacing) - spacing, gridHeight*(pointSize + spacing) - spacing) )
+					}
+					
+					def updateSettings
+					{
+						settings
+						revalidate
+						pack
+					}
+					
+					def event2pos( e: MouseEvent ) = (e.getX/(pointSize + spacing), e.getY/(pointSize + spacing))
+					
+				var px: Int = _
+				var py: Int = _
+					
+					def flip( x: Int, y: Int ) = RectangularUniverse.synchronized
+					{
+						px = x
+						py = y
+						RectangularUniverse.current(x)(y) =
+							{
+							val state = RectangularUniverse.read( x, y )
+							
+								if (state == 0)
+									engine.alive
+								else
+									0
+							}
+						repaint()
+					}
+				
+					addMouseListener(
+						new MouseAdapter
+						{
+							override def mousePressed( e: MouseEvent )
+							{
+							val (x, y) = event2pos( e )
+							
+								flip( x, y )
+							}
+						} )
+					
+					addMouseMotionListener(
+						new MouseAdapter
+						{
+							override def mouseDragged( e: MouseEvent )
+							{
+							val (x, y) = event2pos( e )
+							
+								if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight && (x != px || y != py))
+									flip( x, y )
+							}
+						} )
+					
+					override def paintComponent( g: Graphics )
+					{
+						super.paintComponent( g )
+						
+					val cur = RectangularUniverse.current
+					
+						for (x <- 0 until gridWidth; y <- 0 until gridHeight)
+						{
+						val x1 = x*(pointSize + spacing)
+						val y1 = y*(pointSize + spacing)
+						
+							g setColor engine.colors(cur(x)(y))
+							g.fillRect( x1, y1, pointSize, pointSize )
+						}
+					}
+				}
+				
+				object RectangularUniverse extends Universe
+				{
+					private var array: Array[Array[Array[Int]]] = _
+					private var index: Int = _
+					private var _current: Array[Array[Int]] = _
+					private var _next: Array[Array[Int]] = _
+					private var queue: Int = _
+						
+					init
+					
+					def init
+					{
+						array = new Array[Array[Array[Int]]]( planes )
+						
+						for (i <- 0 until planes)
+							array( i ) = Array.fill( gridWidth, gridHeight )( 0 )
+
+						_current = array( 0 )
+						_next = array( 1 )
+						index = 1
+						queue = 0
+					}
+					
+					def current = _current
+					
+					def next = _next
+					
+					def read( x: Int, y: Int ) = _current((x + gridWidth)%gridWidth)((y + gridHeight)%gridHeight)
+					
+					def write( x: Int, y: Int, v: Int ) = _next(x)(y) = v
+					
+					def tick
+					{
+						_current = _next
+						index = (index + 1)%planes
+						_next = array( index )
+						queue = (queue + 1) min (planes - 1)
+					}
+					
+					def back = (index - 1 + planes)%planes
+					
+					def revert
+					{
+						if (queue > 0)
+						{
+							_next = _current
+							index = back
+							_current = array( back )
+							queue -= 1
+						}
+					}
+				}
+		
+				def title
+				{
+					setTitle( engine.toString)
+				}
+			} )
+			pack
+			setIconifiable( true )
+			setClosable( true )
+			setVisible( true )
+			setSelected( true )
+			addInternalFrameListener(
+				new InternalFrameAdapter
+				{
+					override def internalFrameClosed( e: InternalFrameEvent )
+					{
+						stop
+					}
+				} )
+							
 		def stop
 		{
 			if (timer ne null)
 			{
 				timer.cancel( false )
 				timer = null
-			}
-		}
-		
-		def animate =
-			threadPool.scheduleAtFixedRate(
-				new Runnable
-				{
-					def run
-					{
-						generation
-						GridPanel.repaint()
-					}
-				}, 0, period, TimeUnit.MILLISECONDS )
-
-		def generation = RectangularUniverse.synchronized
-		{
-		val futures =
-			for (r <- (0 until gridWidth).grouped(gridWidth/threads))
-				yield
-					threadPool.submit(
-						new Runnable
-						{
-							def run
-							{
-								for (x <- r; y <- 0 until gridHeight)
-									engine( x, y, RectangularUniverse )
-							}
-						} )
-					
-			for (f <- futures)
-				f.get
-				
-			RectangularUniverse.tick
-		}
-		
-		object GridPanel extends JPanel( true )
-		{
-			setBackground( BLACK )
-			
-			def settings
-			{
-				setPreferredSize( (gridWidth*(pointSize + spacing) - spacing, gridHeight*(pointSize + spacing) - spacing) )
-			}
-			
-			def updateSettings
-			{
-				settings
-				revalidate
-				f.pack
-				f.repaint()
-			}
-			
-			def event2pos( e: MouseEvent ) = (e.getX/(pointSize + spacing), e.getY/(pointSize + spacing))
-			
-		var px: Int = _
-		var py: Int = _
-			
-			def flip( x: Int, y: Int ) = RectangularUniverse.synchronized
-			{
-				px = x
-				py = y
-				u.current(x)(y) =
-					{
-					val state = u.read( x, y )
-					
-						if (state == 0)
-							engine.alive
-						else
-							0
-					}
-				repaint()
-			}
-		
-			addMouseListener(
-				new MouseAdapter
-				{
-					override def mousePressed( e: MouseEvent )
-					{
-					val (x, y) = event2pos( e )
-					
-						flip( x, y )
-					}
-				} )
-			
-			addMouseMotionListener(
-				new MouseAdapter
-				{
-					override def mouseDragged( e: MouseEvent )
-					{
-					val (x, y) = event2pos( e )
-					
-						if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight && (x != px || y != py))
-							flip( x, y )
-					}
-				} )
-			
-			override def paintComponent( g: Graphics )
-			{
-				super.paintComponent( g )
-				
-//			val g2d = g.asInstanceOf[Graphics2D]
-				
-			val cur = u.current
-			
-				for (x <- 0 until gridWidth; y <- 0 until gridHeight)
-				{
-				val x1 = x*(pointSize + spacing)
-				val y1 = y*(pointSize + spacing)
-				
-					g setColor engine.colors(cur(x)(y))
-					g.fillRect( x1, y1, pointSize, pointSize )
-				}
-			}
-		}
-		
-		object RectangularUniverse extends Universe
-		{
-			private var array: Array[Array[Array[Int]]] = _
-			private var index: Int = _
-			private var _current: Array[Array[Int]] = _
-			private var _next: Array[Array[Int]] = _
-			private var queue: Int = _
-				
-			init
-			
-			def init
-			{
-				array = new Array[Array[Array[Int]]]( planes )
-				
-				for (i <- 0 until planes)
-					array( i ) = Array.fill( gridWidth, gridHeight )( 0 )
-
-				_current = array( 0 )
-				_next = array( 1 )
-				index = 1
-				queue = 0
-			}
-			
-			def current = _current
-			
-			def next = _next
-			
-			def read( x: Int, y: Int ) = _current((x + gridWidth)%gridWidth)((y + gridHeight)%gridHeight)
-			
-			def write( x: Int, y: Int, v: Int ) = _next(x)(y) = v
-			
-			def tick
-			{
-				_current = _next
-				index = (index + 1)%planes
-				_next = array( index )
-				queue = (queue + 1) min (planes - 1)
-			}
-			
-			def back = (index - 1 + planes)%planes
-			
-			def revert
-			{
-				if (queue > 0)
-				{
-					_next = _current
-					index = back
-					_current = array( back )
-					queue -= 1
-				}
 			}
 		}
 	}
@@ -571,6 +585,8 @@ class LifeEngine( birth: Set[Int], survival: Set[Int] ) extends CAEngine
 	val colors = Seq( DARK_GRAY.darker.darker, WHITE )
 	
 	val alive = 1
+	
+	override def toString = s"""Life [birth: {${birth.toList.sorted.mkString(",")}}, survial: {${survival.toList.sorted.mkString(",")}}]"""
 }
 
 object GenEngine extends CAEngineConstructor
