@@ -596,7 +596,7 @@ class LifeEngine( birth: Set[Int], survival: Set[Int] ) extends CAEngine
 	
 	val alive = 1
 	
-	override def toString = s"""Life [birth: {${birth.toList.sorted.mkString(",")}}, survial: {${survival.toList.sorted.mkString(",")}}]"""
+	override def toString = s"""Life-like [birth: {${birth.toList.sorted.mkString(",")}}, survial: {${survival.toList.sorted.mkString(",")}}]"""
 }
 
 object GenEngine extends CAEngineConstructor
@@ -650,7 +650,7 @@ class GenEngine( birth: Set[Int], survival: Set[Int], count: Int ) extends CAEng
 		}
 	}
 	
-	val colors = Seq( DARK_GRAY.darker.darker ) ++ HSL( .55, 1, 0 ).shading( count - 2, .2 ) :+ WHITE
+	val colors = Seq( DARK_GRAY.darker.darker ) ++ HSL( .6, 1, 0 ).shading( count - 2, .3 ) :+ WHITE
 	
 	override def toString = s"""Generations [birth: {${birth.toList.sorted.mkString(",")}}, survial: {${survival.toList.sorted.mkString(",")}}, count: $count]"""
 }
