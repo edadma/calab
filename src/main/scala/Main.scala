@@ -7,11 +7,12 @@ import java.awt.event._
 import javax.swing._
 import SwingUtilities._
 import JOptionPane._
+import javax.swing.filechooser._
 import javax.swing.event._
 import java.util.concurrent.{ScheduledThreadPoolExecutor, TimeUnit, ScheduledFuture}
 
 import util.Random._
-import collection.mutable.{ArrayBuffer}
+import collection.mutable.{HashMap, ArrayBuffer}
 
 import ca.hyperreal.color.HSL
 
@@ -28,7 +29,12 @@ object Main extends App
 	val threadPool = new ScheduledThreadPoolExecutor( 20 )
 	val iconFont = Font.createFont( Font.TRUETYPE_FONT, Main.getClass.getResourceAsStream("fontawesome-webfont.ttf") ).deriveFont( 10f )
 	val engines = ArrayBuffer( LifeEngine, GenEngine )
-	
+	val patternChooser =
+		new JFileChooser
+		{
+			setFileFilter( new FileNameExtensionFilter( "Plaintext Patterns", "cells" ) )
+		}
+	val patternMap = new HashMap[String, ArrayBuffer[String]]
 	lazy val mainFrame: JFrame =
 		new JFrame( "CALab Version 0.1" )
 		{
@@ -74,6 +80,46 @@ object Main extends App
 													{
 														case e => showMessageDialog( mainFrame, "problem loading engine" )
 													}
+											}
+										}
+									} ) )
+							add(
+								new JMenuItem(
+									new AbstractAction( "Load Pattern" )
+									{
+										def actionPerformed( e: ActionEvent )
+										{
+											if (patternChooser.showOpenDialog( mainFrame ) == JFileChooser.APPROVE_OPTION)
+											{
+											var name = patternChooser.getSelectedFile.getName
+											val pattern = new ArrayBuffer[String]
+											
+												for (line <- io.Source.fromFile( patternChooser.getSelectedFile ).getLines)
+													if (line.startsWith( "!" ))
+													{
+														if (line.startsWith( "!Name:" ))
+															name = line.substring( 6 ).trim
+													}
+													else
+													{
+														if (!pattern.isEmpty && pattern.head.length != line.length)
+														{
+															showMessageDialog( mainFrame,
+																			   "pattern lines must all be the same length", "Error loading pattern",  ERROR_MESSAGE )
+															return
+														}
+														
+														if (!line.matches( "[.O]+"))
+														{
+															showMessageDialog( mainFrame,
+																			   "pattern lines can only have .'s and O's", "Error loading pattern",  ERROR_MESSAGE )
+															return
+														}
+														
+														pattern += line
+													}
+											
+												patternMap( name ) = pattern
 											}
 										}
 									} ) )
@@ -245,7 +291,7 @@ object Main extends App
 							} )
 						add(
 							icon( "\uf048" )
-							{ b =>
+							{ _ =>
 								if (timer eq null)
 								{
 									RectangularUniverse.revert
@@ -268,7 +314,7 @@ object Main extends App
 							} )
 						add(
 							icon( "\uf051" )
-							{ b =>
+							{ _ =>
 								{
 									if (timer eq null)
 									{
@@ -448,14 +494,43 @@ object Main extends App
 						{
 							override def mousePressed( e: MouseEvent )
 							{
-								if (e.getButton == MouseEvent.BUTTON1)
+								e.getButton match
 								{
-								val (x, y) = event2pos( e )
-								
-									if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight)
-										flip( x, y )
-										
-									button1 = true
+									case MouseEvent.BUTTON1 =>
+										val (x, y) = event2pos( e )
+									
+										if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight)
+											flip( x, y )
+											
+										button1 = true
+									case MouseEvent.BUTTON3 =>
+										val (x, y) = event2pos( e )
+									
+										if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight)
+										{
+										val popupMenu =
+											new JPopupMenu
+											{
+												add(
+													new JMenu( "place pattern" )
+													{
+														for (k <- patternMap.keys)
+															add(
+																new AbstractAction( k )
+																{
+																	def actionPerformed( ae: ActionEvent )
+																	{
+																		for ((l, i) <- patternMap(ae.getSource.asInstanceOf[JMenuItem].getText) zipWithIndex)
+																			for ((c, j) <- l zipWithIndex)
+																				if (c == 'O')
+																					flip( x + j, y + i )
+																	}
+																} )
+													} )
+											}
+											
+											popupMenu.show( GridPanel.this, e.getX, e.getY )
+										}
 								}
 							}
 							
@@ -553,7 +628,7 @@ object Main extends App
 		
 				def title
 				{
-					setTitle( engine.toString)
+					setTitle( engine.toString )
 				}
 			} )
 			pack
