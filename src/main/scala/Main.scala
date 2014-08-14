@@ -448,7 +448,8 @@ object Main extends App
 							{
 							val (x, y) = event2pos( e )
 							
-								flip( x, y )
+								if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight)
+									flip( x, y )
 							}
 						} )
 					
@@ -585,13 +586,20 @@ trait CAEngine extends ((Int, Int, Universe) => Unit)
 
 object LifeEngine extends CAEngineConstructor
 {
-	val RULE = """B(\d*)/S(\d*)"""r
+	val RULE1 = """B(\d*)/S(\d*)"""r
+	val RULE2 = """(\d*)/(\d*)"""r
 	
 	def apply( rule: String ) =
 	{
-		if (RULE.pattern.matcher( rule ).matches)
+		if (RULE1.pattern.matcher( rule ).matches)
 		{
-		val RULE(b, s) = rule
+		val RULE1(b, s) = rule
+		
+			Some( new LifeEngine(string(b), string(s)) )
+		}
+		else if (RULE2.pattern.matcher( rule ).matches)
+		{
+		val RULE2(s, b) = rule
 		
 			Some( new LifeEngine(string(b), string(s)) )
 		}
