@@ -2,14 +2,16 @@ package ca.hyperreal.calab
 
 import java.awt.{Dimension, Toolkit, BorderLayout, Graphics, FlowLayout, Graphics2D, Font}
 import java.awt.Color
-import java.awt.Color._
+import Color._
 import java.awt.event._
 import javax.swing._
-import javax.swing.SwingUtilities._
+import SwingUtilities._
+import JOptionPane._
 import javax.swing.event._
 import java.util.concurrent.{ScheduledThreadPoolExecutor, TimeUnit, ScheduledFuture}
 
 import util.Random._
+import collection.mutable.{ArrayBuffer}
 
 import ca.hyperreal.color.HSL
 
@@ -25,8 +27,9 @@ object Main extends App
 		}
 	val threadPool = new ScheduledThreadPoolExecutor( 20 )
 	val iconFont = Font.createFont( Font.TRUETYPE_FONT, Main.getClass.getResourceAsStream("fontawesome-webfont.ttf") ).deriveFont( 10f )
+	val engines = ArrayBuffer( LifeEngine, GenEngine )
 	
-	lazy val mainFrame =
+	lazy val mainFrame: JFrame =
 		new JFrame( "CALab Version 0.1" )
 		{
 		val screenSize = Toolkit.getDefaultToolkit.getScreenSize
@@ -54,6 +57,28 @@ object Main extends App
 						{
 							add(
 								new JMenuItem(
+									new AbstractAction( "Load Engine" )
+									{
+										def actionPerformed( e: ActionEvent )
+										{
+											showInputDialog( mainFrame, "Enter fully qualified class name." ) match
+											{
+												case null =>
+												case s if s.trim == "" =>
+												case s =>
+													try
+													{
+														engines += Class.forName( s ).newInstance.asInstanceOf[CAEngineConstructor]
+													}
+													catch
+													{
+														case e => showMessageDialog( mainFrame, "problem loading engine" )
+													}
+											}
+										}
+									} ) )
+							add(
+								new JMenuItem(
 									new AbstractAction( "Quit" )
 									{
 										def actionPerformed( e: ActionEvent )
@@ -71,7 +96,10 @@ object Main extends App
 									{
 										def actionPerformed( e: ActionEvent )
 										{
-											desktop.add( new RectangularGridFrame )
+										val grid = new RectangularGridFrame
+										
+											desktop.add( grid )
+											grid.toFront
 										}
 									} ) )
 						} )
@@ -135,7 +163,7 @@ object Main extends App
 			}
 		} )
 
-	class RectangularGridFrame extends JInternalFrame
+	class RectangularGridFrame/*( settings: Map )*/ extends JInternalFrame
 	{
 		var timer: ScheduledFuture[_] = null
 		
@@ -182,7 +210,7 @@ object Main extends App
 									} )
 							} )
 						add(
-							new JComboBox( Array(LifeEngine, GenEngine) )
+							new JComboBox( engines.toArray )
 							{
 								addActionListener(
 									new ActionListener
@@ -524,7 +552,7 @@ object Main extends App
 						stop
 					}
 				} )
-							
+			
 		def stop
 		{
 			if (timer ne null)
