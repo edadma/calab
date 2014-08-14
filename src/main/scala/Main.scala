@@ -441,15 +441,28 @@ object Main extends App
 						repaint()
 					}
 				
+				var button1 = false
+				
 					addMouseListener(
 						new MouseAdapter
 						{
 							override def mousePressed( e: MouseEvent )
 							{
-							val (x, y) = event2pos( e )
+								if (e.getButton == MouseEvent.BUTTON1)
+								{
+								val (x, y) = event2pos( e )
+								
+									if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight)
+										flip( x, y )
+										
+									button1 = true
+								}
+							}
 							
-								if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight)
-									flip( x, y )
+							override def mouseReleased( e: MouseEvent )
+							{
+								if (e.getButton == MouseEvent.BUTTON1)
+									button1 = false
 							}
 						} )
 					
@@ -458,10 +471,13 @@ object Main extends App
 						{
 							override def mouseDragged( e: MouseEvent )
 							{
-							val (x, y) = event2pos( e )
-							
-								if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight && (x != px || y != py))
-									flip( x, y )
+								if (button1)
+								{
+								val (x, y) = event2pos( e )
+								
+									if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight && (x != px || y != py))
+										flip( x, y )
+								}
 							}
 						} )
 					
