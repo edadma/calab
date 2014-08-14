@@ -12,6 +12,7 @@ import javax.swing.event._
 import java.util.concurrent.{ScheduledThreadPoolExecutor, TimeUnit, ScheduledFuture}
 
 import util.Random._
+import io.Source
 import collection.mutable.{HashMap, ArrayBuffer}
 
 import ca.hyperreal.color.HSL
@@ -35,6 +36,33 @@ object Main extends App
 			setFileFilter( new FileNameExtensionFilter( "Plaintext Patterns", "cells" ) )
 		}
 	val patternMap = new HashMap[String, ArrayBuffer[String]]
+	
+	def patternFromSource( defaultName: String, s: Source ): Option[(String, ArrayBuffer[String])] =
+	{
+	val pattern = new ArrayBuffer[String]
+	var name = defaultName
+	
+		for (line <- s.getLines)
+			if (line.startsWith( "!" ))
+			{
+				if (line.startsWith( "!Name:" ))
+					name = line.substring( 6 ).trim
+			}
+			else
+			{
+				if (!line.matches( "[.O]+"))
+				{
+					showMessageDialog( mainFrame,
+										"pattern lines can only have .'s and O's", "Error loading pattern",  ERROR_MESSAGE )
+					return None
+				}
+				
+				pattern += line
+			}
+			
+		Some(name, pattern)
+	}
+	
 	lazy val mainFrame: JFrame =
 		new JFrame( "CALab Version 0.1" )
 		{
@@ -85,34 +113,35 @@ object Main extends App
 									} ) )
 							add(
 								new JMenuItem(
-									new AbstractAction( "Load Pattern" )
+									new AbstractAction( "Load Pattern from File" )
 									{
 										def actionPerformed( e: ActionEvent )
 										{
 											if (patternChooser.showOpenDialog( mainFrame ) == JFileChooser.APPROVE_OPTION)
 											{
-											var name = patternChooser.getSelectedFile.getName
-											val pattern = new ArrayBuffer[String]
-											
-												for (line <- io.Source.fromFile( patternChooser.getSelectedFile ).getLines)
-													if (line.startsWith( "!" ))
-													{
-														if (line.startsWith( "!Name:" ))
-															name = line.substring( 6 ).trim
-													}
-													else
-													{
-														if (!line.matches( "[.O]+"))
-														{
-															showMessageDialog( mainFrame,
-																			   "pattern lines can only have .'s and O's", "Error loading pattern",  ERROR_MESSAGE )
-															return
-														}
-														
-														pattern += line
-													}
-											
-												patternMap( name ) = pattern
+												patternFromSource( patternChooser.getSelectedFile.getName, 
+													io.Source.fromFile(patternChooser.getSelectedFile) ) match
+												{
+													case Some( kv ) => patternMap += kv
+													case None =>
+												}
+											}
+										}
+									} ) )
+							add(
+								new JMenuItem(
+									new AbstractAction( "Load Pattern from URL" )
+									{
+										def actionPerformed( e: ActionEvent )
+										{
+											if (patternChooser.showOpenDialog( mainFrame ) == JFileChooser.APPROVE_OPTION)
+											{
+												patternFromSource( patternChooser.getSelectedFile.getName, 
+													io.Source.fromFile(patternChooser.getSelectedFile) ) match
+												{
+													case Some( kv ) => patternMap += kv
+													case None =>
+												}
 											}
 										}
 									} ) )
