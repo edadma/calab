@@ -102,13 +102,6 @@ object Main extends App
 													}
 													else
 													{
-														if (!pattern.isEmpty && pattern.head.length != line.length)
-														{
-															showMessageDialog( mainFrame,
-																			   "pattern lines must all be the same length", "Error loading pattern",  ERROR_MESSAGE )
-															return
-														}
-														
 														if (!line.matches( "[.O]+"))
 														{
 															showMessageDialog( mainFrame,
