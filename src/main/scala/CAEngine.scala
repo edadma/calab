@@ -120,7 +120,7 @@ class GenEngine( birth: Set[Int], survival: Set[Int], count: Int ) extends CAEng
 		}
 	}
 	
-	val colors = Seq( DARK_GRAY.darker.darker ) ++ HSL( .6, 1, 0 ).shading( count - 2, .3 ) :+ WHITE
+	val colors = Seq( DARK_GRAY.darker.darker ) ++ HSL.shading( .6, 1, count - 2, .3 ) :+ WHITE
 	
 	override def toString = s"""Generations [birth: {${birth.toList.sorted.mkString(",")}}, survial: {${survival.toList.sorted.mkString(",")}}, count: $count]"""
 }
