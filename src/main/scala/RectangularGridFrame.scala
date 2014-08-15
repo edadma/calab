@@ -304,14 +304,15 @@ class RectangularGridFrame( threadPool: ScheduledThreadPoolExecutor,
 				}
 			
 				var button1 = false
-						
+				var store = false
+				var storex = 0
+				var storey = 0
+				var mx = 0
+				var my = 0
+				
 				addMouseListener(
 					new MouseAdapter
-					{
-						var store = false
-						var storex = 0
-						var storey = 0
-						
+					{						
 						override def mousePressed( e: MouseEvent )
 						{
 							e.getButton match
@@ -373,6 +374,7 @@ class RectangularGridFrame( threadPool: ScheduledThreadPoolExecutor,
 													store = true
 													storex = x
 													storey = y
+													GridPanel.repaint()
 												} )
 										}
 										
@@ -389,7 +391,7 @@ class RectangularGridFrame( threadPool: ScheduledThreadPoolExecutor,
 					} )
 				
 				addMouseMotionListener(
-					new MouseAdapter
+					new MouseMotionAdapter
 					{
 						override def mouseDragged( e: MouseEvent )
 						{
@@ -400,6 +402,20 @@ class RectangularGridFrame( threadPool: ScheduledThreadPoolExecutor,
 								if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight && (x != px || y != py))
 									flip( x, y )
 							}
+						}
+						
+						override def mouseMoved( e: MouseEvent )
+						{
+						val (x, y) = event2pos( e )
+						
+							if (x >= 0 && x < gridWidth)
+								mx = x
+								
+							if (y >= 0 && y < gridHeight)
+								my = y
+							
+							if (store)
+								repaint()
 						}
 					} )
 				
@@ -416,6 +432,18 @@ class RectangularGridFrame( threadPool: ScheduledThreadPoolExecutor,
 					
 						g setColor engine.colors(cur(x)(y))
 						g.fillRect( x1, y1, pointSize, pointSize )
+					}
+					
+					if (store)
+					{
+						g setColor DARK_GRAY
+						
+					val x = storex min mx
+					val y = storey min my
+					val w = (storex - mx).abs
+					val h = (storey - my).abs
+					
+						g.drawRect( x*(pointSize + spacing), y*(pointSize + spacing), w*(pointSize + spacing) + pointSize - 1, h*(pointSize + spacing) + pointSize - 1 )
 					}
 				}
 			}
