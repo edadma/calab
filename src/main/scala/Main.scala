@@ -1,6 +1,6 @@
 package ca.hyperreal.calab
 
-import java.awt.{Dimension, Toolkit, BorderLayout, Graphics, FlowLayout, Graphics2D, Font}
+import java.awt.{Cursor, Dimension, Toolkit, BorderLayout, Graphics, FlowLayout, Graphics2D, Font}
 import java.awt.Color
 import Color._
 import java.awt.event._
@@ -10,6 +10,7 @@ import JOptionPane._
 import javax.swing.filechooser._
 import javax.swing.event._
 import java.util.concurrent.{ScheduledThreadPoolExecutor, TimeUnit, ScheduledFuture}
+import java.net.URL
 
 import util.Random._
 import io.Source
@@ -35,12 +36,19 @@ object Main extends App
 		{
 			setFileFilter( new FileNameExtensionFilter( "Plaintext Patterns", "cells" ) )
 		}
-	val patternMap = new HashMap[String, ArrayBuffer[String]]
+	val patternMap = new HashMap[String, Pattern]
 	
-	def patternFromSource( defaultName: String, s: Source ): Option[(String, ArrayBuffer[String])] =
+	def buttonAction( s: String )( thunk: => Unit ) =
+		new AbstractAction( s )
+		{
+			def actionPerformed( e: ActionEvent ) = thunk
+		}
+		
+	def patternFromSource( defaultName: String, s: Source ): Option[(String, Pattern)] =
 	{
-	val pattern = new ArrayBuffer[String]
+	val buf = new ArrayBuffer[String]
 	var name = defaultName
+	var width = 0
 	
 		for (line <- s.getLines)
 			if (line.startsWith( "!" ))
@@ -57,10 +65,16 @@ object Main extends App
 					return None
 				}
 				
-				pattern += line
+				width = width max line.length
+				buf += line
 			}
 			
-		Some(name, pattern)
+	val pat = new Pattern( width, buf.size )
+	
+		for (i <- 0 until buf.size; j <- 0 until buf(i).length)
+			pat.put( j, i, if (buf(i)(j) == 'O') 1 else 0 )
+			
+		Some(name, pat)
 	}
 	
 	lazy val mainFrame: JFrame =
@@ -134,14 +148,17 @@ object Main extends App
 									{
 										def actionPerformed( e: ActionEvent )
 										{
-											if (patternChooser.showOpenDialog( mainFrame ) == JFileChooser.APPROVE_OPTION)
+											showInputDialog( mainFrame, "Enter URL of pattern." ) match
 											{
-												patternFromSource( patternChooser.getSelectedFile.getName, 
-													io.Source.fromFile(patternChooser.getSelectedFile) ) match
-												{
-													case Some( kv ) => patternMap += kv
-													case None =>
-												}
+												case null | "" =>
+												case u => 
+													val url = new URL( u )
+													
+													patternFromSource( url.getFile, io.Source.fromURL(url) ) match
+													{
+														case Some( kv ) => patternMap += kv
+														case None =>
+													}
 											}
 										}
 									} ) )
@@ -509,11 +526,15 @@ object Main extends App
 						repaint()
 					}
 				
-				var button1 = false
-				
+					var button1 = false
+							
 					addMouseListener(
 						new MouseAdapter
 						{
+							var store = false
+							var storex = 0
+							var storey = 0
+							
 							override def mousePressed( e: MouseEvent )
 							{
 								e.getButton match
@@ -522,9 +543,17 @@ object Main extends App
 										val (x, y) = event2pos( e )
 									
 										if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight)
-											flip( x, y )
-											
-										button1 = true
+											if (store)
+											{
+												store = false
+												GridPanel.setCursor( Cursor.getDefaultCursor )
+												println( storex, storey, x, y )
+											}
+											else
+											{
+												flip( x, y )												
+												button1 = true
+											}
 									case MouseEvent.BUTTON3 =>
 										val (x, y) = event2pos( e )
 									
@@ -534,20 +563,28 @@ object Main extends App
 											new JPopupMenu
 											{
 												add(
-													new JMenu( "place pattern" )
+													new JMenu( "Insert pattern" )
 													{
 														for (k <- patternMap.keys)
 															add(
-																new AbstractAction( k )
+																buttonAction( k )
 																{
-																	def actionPerformed( ae: ActionEvent )
-																	{
-																		for ((l, i) <- patternMap(ae.getSource.asInstanceOf[JMenuItem].getText) zipWithIndex)
-																			for ((c, j) <- l zipWithIndex)
-																				if (c == 'O')
-																					flip( x + j, y + i )
-																	}
+																	val pat = patternMap(k)
+																	
+//																		RectangularUniverse.synchronized
+//																		{
+																			//for (i <- 0 until pat.width; j <- 0 until pat.height)
+																				//RectangularUniverse.current(x + j)(y + i) = pat.get( i, j )
+//																		}
 																} )
+													} )
+												add(
+													buttonAction( "Store pattern" )
+													{
+														GridPanel.setCursor( Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR) )
+														store = true
+														storex = x
+														storey = y
 													} )
 											}
 											
