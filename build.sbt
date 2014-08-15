@@ -9,7 +9,7 @@ version := "0.1"
 
 scalaVersion := "2.11.2"
 
-scalacOptions ++= Seq( "-deprecation", "-feature", "-language:postfixOps", "-language:implicitConversions", "-language:existentials" )
+scalacOptions ++= Seq( "-deprecation", "-feature", "-language:postfixOps", "-language:implicitConversions", "-language:existentials", "-Xmax-classfile-name", "254" )
 
 incOptions := incOptions.value.withNameHashing( true )
 
