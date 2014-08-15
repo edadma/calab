@@ -362,14 +362,7 @@ class RectangularGridFrame( threadPool: ScheduledThreadPoolExecutor,
 														add(
 															buttonAction( k )
 															{
-															val pat = patterns(k)
-															
-																RectangularUniverse.synchronized
-																{
-																	for (i <- 0 until pat.width; j <- 0 until pat.height)
-																		RectangularUniverse.current(x + i)(y + j) = pat.get( i, j )
-																}
-																
+																RectangularUniverse.put( x, y, patterns(k) )
 																GridPanel.repaint()
 															} )
 												} )
@@ -448,6 +441,12 @@ class RectangularGridFrame( threadPool: ScheduledThreadPoolExecutor,
 					_next = array( 1 )
 					index = 1
 					queue = 0
+				}
+				
+				def put( x: Int, y: Int, pat: Pattern ) = synchronized
+				{
+					for (i <- 0 until pat.width; j <- 0 until pat.height)
+						_current(x + i)(y + j) = pat.get( i, j )
 				}
 				
 				def current = _current
