@@ -81,17 +81,17 @@ pomIncludeRepository := { _ => false }
 
 licenses := Seq("GPL" -> url("http://opensource.org/licenses/GPL-3.0"))
 
-homepage := Some(url("https://github.com/FunL/funl"))
+homepage := Some(url("https://github.com/edadma/CALab"))
 
 pomExtra := (
   <scm>
-    <url>git@github.com:FunL/funl.git</url>
-    <connection>scm:git:git@github.com:FunL/funl.git</connection>
+    <url>git@github.com:edadma/CALab.git</url>
+    <connection>scm:git:git@github.com:edadma/CALab.git</connection>
   </scm>
   <developers>
     <developer>
       <id>edadma</id>
       <name>Edward A. Maxedon, Sr.</name>
-      <url>http://funl-lang.org</url>
+      <url>http://hyperreal.ca</url>
     </developer>
   </developers>)
