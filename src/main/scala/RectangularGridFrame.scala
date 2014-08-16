@@ -13,21 +13,13 @@ import java.net.URL
 
 import util.Random._
 import io.Source
-import collection.mutable.{Map, Buffer}
+import collection.mutable.{Buffer}
 
 
-class RectangularGridFrame( threadPool: ScheduledThreadPoolExecutor, 
-							engines: Buffer[CAEngineConstructor], 
-							patterns: Map[String, Pattern] )/*( settings: Map )*/ extends JInternalFrame
+class RectangularGridFrame( settings: Map[Symbol, Any] = Map() ) extends JInternalFrame
 {
 	var timer: ScheduledFuture[_] = null
 	val iconFont = Font.createFont( Font.TRUETYPE_FONT, Main.getClass.getResourceAsStream("fontawesome-webfont.ttf") ).deriveFont( 10f )
-	
-	def buttonAction( s: String )( thunk: => Unit ) =
-		new AbstractAction( s )
-		{
-			def actionPerformed( e: ActionEvent ) = thunk
-		}
 
 	setContentPane(
 		new JPanel( new BorderLayout, true )
@@ -42,6 +34,16 @@ class RectangularGridFrame( threadPool: ScheduledThreadPoolExecutor,
 			var constructor: CAEngineConstructor = LifeEngine
 			var threads = 4
 			
+			for ((k, v) <- settings)
+				(k, v) match
+				{
+					case ('width, w: Int) => gridWidth = w
+					case ('height, h: Int) => gridHeight = h
+					case ('size, s: Int) => pointSize = s
+					case ('spacing, s: Int) => spacing = s
+					case ('period, p: Int) => period = p
+				}
+					
 			RectangularUniverse.init
 			title
 			
@@ -142,7 +144,7 @@ class RectangularGridFrame( threadPool: ScheduledThreadPoolExecutor,
 					add(
 						number( gridWidth, "width" )
 						{ n =>
-							if (timer == null && n > 1 && n <= 1000)
+							if (timer == null && n > 1 && n <= 2000)
 							{
 								gridWidth = n
 								GridPanel.updateSettings
@@ -152,7 +154,7 @@ class RectangularGridFrame( threadPool: ScheduledThreadPoolExecutor,
 					add(
 						number( gridHeight, "height" )
 						{ n =>
-							if (timer == null && n > 1 && n <= 500)
+							if (timer == null && n > 1 && n <= 1000)
 							{
 								gridHeight = n
 								GridPanel.updateSettings
@@ -162,7 +164,7 @@ class RectangularGridFrame( threadPool: ScheduledThreadPoolExecutor,
 					add(
 						number( pointSize, "size" )
 						{ n =>
-							if (n >= 1 && n < 500)
+							if (n >= 1 && n < 50)
 							{
 								pointSize = n
 								GridPanel.updateSettings
@@ -171,7 +173,7 @@ class RectangularGridFrame( threadPool: ScheduledThreadPoolExecutor,
 					add(
 						number( spacing, "space" )
 						{ n =>
-							if (n >= 0 && n < 500)
+							if (n >= 0 && n < 50)
 							{
 								spacing = n
 								GridPanel.updateSettings

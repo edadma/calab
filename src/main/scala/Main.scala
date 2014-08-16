@@ -23,14 +23,11 @@ object Main extends App
 		{
 			setBackground( DARK_GRAY )
 		}
-	val threadPool = new ScheduledThreadPoolExecutor( 20 )
-	val engines = ArrayBuffer( LifeEngine, GenEngine )
 	val patternChooser =
 		new JFileChooser
 		{
 			setFileFilter( new FileNameExtensionFilter( "Plaintext Patterns", "cells" ) )
 		}
-	val patterns = new HashMap[String, Pattern]
 		
 	def patternFromSource( defaultName: String, s: Source ): Option[(String, Pattern)] =
 	{
@@ -74,7 +71,7 @@ object Main extends App
 			setBounds( inset, inset,
 				screenSize.width  - inset*8,
 				screenSize.height - inset*2 )
-			desktop.add( new RectangularGridFrame(threadPool, engines, patterns) )
+			desktop.add( new RectangularGridFrame )
 			setContentPane( desktop )
 			addWindowListener(
 				new WindowAdapter
@@ -163,13 +160,51 @@ object Main extends App
 					add(
 						new JMenu( "Grid" )
 						{
+						val by = "\u00d7"
+						
 							add(
 								new JMenuItem(
-									new AbstractAction( "New" )
+									new AbstractAction( s"100${by}100, 20 frames per second" )
 									{
 										def actionPerformed( e: ActionEvent )
 										{
-										val grid = new RectangularGridFrame( threadPool, engines, patterns )
+										val grid = new RectangularGridFrame
+										
+											desktop.add( grid )
+											grid.toFront
+										}
+									} ) )
+							add(
+								new JMenuItem(
+									new AbstractAction( s"20${by}20, large squares, half second period" )
+									{
+										def actionPerformed( e: ActionEvent )
+										{
+										val grid = new RectangularGridFrame( Map('width -> 20, 'height -> 20, 'size -> 20, 'spacing -> 2, 'period -> 500) )
+										
+											desktop.add( grid )
+											grid.toFront
+										}
+									} ) )
+							add(
+								new JMenuItem(
+									new AbstractAction( s"500${by}500, pixel squares, fasted possible" )
+									{
+										def actionPerformed( e: ActionEvent )
+										{
+										val grid = new RectangularGridFrame( Map('width -> 500, 'height -> 500, 'size -> 1, 'spacing -> 0, 'period -> 1) )
+										
+											desktop.add( grid )
+											grid.toFront
+										}
+									} ) )
+							add(
+								new JMenuItem(
+									new AbstractAction( s"1200${by}600, pixel squares, fasted possible" )
+									{
+										def actionPerformed( e: ActionEvent )
+										{
+										val grid = new RectangularGridFrame( Map('width -> 1200, 'height -> 600, 'size -> 1, 'spacing -> 0, 'period -> 1) )
 										
 											desktop.add( grid )
 											grid.toFront
@@ -204,7 +239,7 @@ object Main extends App
 				new JPanel
 				{
 					add(
-						new JButton("Ok")
+						new JButton( "Ok" )
 						{
 							addActionListener(
 								new ActionListener
