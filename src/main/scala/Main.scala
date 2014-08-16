@@ -43,15 +43,17 @@ object Main extends App
 			}
 			else
 			{
-				if (!line.matches( "[.O]+"))
+			val l = line.trim
+			
+				if (!l.matches( "[.O]*"))
 				{
 					showMessageDialog( mainFrame,
 										"pattern lines can only have .'s and O's", "Error loading pattern",  ERROR_MESSAGE )
 					return None
 				}
 				
-				width = width max line.length
-				buf += line
+				width = width max l.length
+				buf += l
 			}
 			
 	val pat = new Pattern( width, buf.size )

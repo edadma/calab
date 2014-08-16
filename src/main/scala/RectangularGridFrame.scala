@@ -476,7 +476,7 @@ class RectangularGridFrame( settings: Map[Symbol, Any] = Map() ) extends JIntern
 				def put( x: Int, y: Int, pat: Pattern ) = synchronized
 				{
 					for (i <- 0 until pat.width; j <- 0 until pat.height)
-						_current(x + i)(y + j) = pat.get( i, j )
+						_current((x + i)%gridWidth)((y + j)%gridHeight) = pat.get( i, j )
 				}
 				
 				def current = _current
