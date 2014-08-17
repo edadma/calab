@@ -51,22 +51,34 @@ class RectangularGridFrame( settings: Map[Symbol, Any] = Map() ) extends JIntern
 				new JPanel( new FlowLayout(FlowLayout.LEFT) )
 				{
 					add(
-						new JComboBox( Array("1/8", "1/7", "1/6", "1/5", "1/4", "1/3", "0") )
+						new JComboBox( Array("any", "1/8", "1/7", "1/6", "1/5", "1/4", "1/3", "0") )
 						{
 							addActionListener(
 								new ActionListener
 								{
 									override def actionPerformed( e: ActionEvent )
 									{
-									val prob =
-										Map(
-											"1/8" -> 1.0/8, "1/7" -> 1.0/7, "1/6" -> 1.0/6, "1/5" -> 1.0/5,
-											"1/4" -> 1.0/4, "1/3" -> 1.0/3, "0" -> 0.0 )( e.getSource.asInstanceOf[JComboBox[String]].getSelectedItem.asInstanceOf[String] )
-											
+									val r =
+										{
+										val s = e.getSource.asInstanceOf[JComboBox[String]].getSelectedItem.asInstanceOf[String]
+										
+											if (s == "any")
+												() => nextInt( engine.maxValue + 1 )
+											else
+											{
+											val prob =
+												Map(
+													"1/8" -> 1.0/8, "1/7" -> 1.0/7, "1/6" -> 1.0/6, "1/5" -> 1.0/5,
+													"1/4" -> 1.0/4, "1/3" -> 1.0/3, "0" -> 0.0 )( s )
+													
+												() => if (nextDouble < prob) engine.maxValue else 0
+											}
+										}
+												
 										RectangularUniverse.synchronized
 										{
 											for (x <- 0 until gridWidth; y <- 0 until gridHeight)
-												RectangularUniverse.current(x)(y) = if (nextDouble < prob) engine.alive else 0
+												RectangularUniverse.current(x)(y) = r()
 										}
 										
 										GridPanel.repaint()
@@ -236,17 +248,18 @@ class RectangularGridFrame( settings: Map[Symbol, Any] = Map() ) extends JIntern
 					}
 				}
 			
-			def animate =
-				threadPool.scheduleAtFixedRate(
-					new Runnable
+			val animateRunnable =
+				new Runnable
+				{
+					def run
 					{
-						def run
-						{
-							generation
-							GridPanel.repaint()
-						}
-					}, 0, period, TimeUnit.MILLISECONDS )
-
+						generation
+						GridPanel.repaint()
+					}
+				}
+					
+			def animate = threadPool.scheduleAtFixedRate( animateRunnable, 0, period, TimeUnit.MILLISECONDS )
+					
 			def generation = RectangularUniverse.synchronized
 			{
 			val futures =
@@ -298,7 +311,7 @@ class RectangularGridFrame( settings: Map[Symbol, Any] = Map() ) extends JIntern
 						val state = RectangularUniverse.read( x, y )
 						
 							if (state == 0)
-								engine.alive
+								engine.maxValue
 							else
 								0
 						}

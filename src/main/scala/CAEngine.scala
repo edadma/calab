@@ -15,7 +15,7 @@ trait CAEngine extends ((Int, Int, Universe) => Unit)
 {
 	def colors: Seq[Color]
 	
-	def alive: Int
+	def maxValue: Int
 }
 
 object LifeEngine extends CAEngineConstructor
@@ -64,7 +64,7 @@ class LifeEngine( birth: Set[Int], survival: Set[Int] ) extends CAEngine
 	
 	val colors = Seq( DARK_GRAY.darker.darker, WHITE )
 	
-	val alive = 1
+	val maxValue = 1
 	
 	override def toString = s"""Life-like [birth: {${birth.toList.sorted.mkString(",")}}, survial: {${survival.toList.sorted.mkString(",")}}]"""
 }
@@ -90,15 +90,15 @@ object GenEngine extends CAEngineConstructor
 
 class GenEngine( birth: Set[Int], survival: Set[Int], count: Int ) extends CAEngine
 {
-	val alive = count - 1
+	val maxValue = count - 1
 	
 	def apply( x: Int, y: Int, u: Universe )
 	{
-		def living( x: Int, y: Int ) = if (u.read( x, y ) == alive) 1 else 0
+		def living( x: Int, y: Int ) = if (u.read( x, y ) == maxValue) 1 else 0
 		
 	val state = u.read( x, y )
 	
-		if (state > 0 && state < alive)
+		if (state > 0 && state < maxValue)
 			u.write( x, y, state - 1 )
 		else
 		{
@@ -114,9 +114,9 @@ class GenEngine( birth: Set[Int], survival: Set[Int], count: Int ) extends CAEng
 			neighbours += living( x + 1, y )
 			
 			if (state == 0)
-				u.write( x, y, if (birth( neighbours )) alive else 0 )
+				u.write( x, y, if (birth( neighbours )) maxValue else 0 )
 			else
-				u.write( x, y, if (survival( neighbours )) alive else alive - 1 )
+				u.write( x, y, if (survival( neighbours )) maxValue else maxValue - 1 )
 		}
 	}
 	

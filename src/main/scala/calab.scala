@@ -19,6 +19,6 @@ package object calab
 		}
 	
 	private [calab] val threadPool = new ScheduledThreadPoolExecutor( 20 )
-	private [calab] val engines = ArrayBuffer( LifeEngine, GenEngine )
+	private [calab] val engines = new ArrayBuffer[CAEngineConstructor]
 	private [calab] val patterns = new HashMap[String, Pattern]
 }

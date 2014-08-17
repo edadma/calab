@@ -23,6 +23,8 @@ object Main extends App
 		engines += Class.forName( s ).newInstance.asInstanceOf[CAEngineConstructor]
 	}
 	
+	engines ++= Seq( LifeEngine, GenEngine )
+	
 	Options( args )
 	{
 		case "-e" :: c :: t =>
