@@ -17,7 +17,22 @@ import collection.mutable.{HashMap, ArrayBuffer}
 
 
 object Main extends App
-{	
+{
+	def loadEngine( s: String )
+	{
+		engines += Class.forName( s ).newInstance.asInstanceOf[CAEngineConstructor]
+	}
+	
+	Options( args )
+	{
+		case "-e" :: c :: t =>
+			loadEngine( c )
+			t
+		case o :: _ if o startsWith "-" => sys.error( "bad option: " + o )
+		case f :: t =>
+			t
+	}
+	
 	lazy val desktop: JDesktopPane =
 		new JDesktopPane
 		{
@@ -69,7 +84,7 @@ object Main extends App
 		{
 		val screenSize = Toolkit.getDefaultToolkit.getScreenSize
 		val inset = 20
-		
+
 			setBounds( inset, inset,
 				screenSize.width  - inset*8,
 				screenSize.height - inset*2 )
@@ -100,15 +115,16 @@ object Main extends App
 											{
 												case null =>
 												case s if s.trim == "" =>
-												case s =>
+												case s => 
 													try
 													{
-														engines += Class.forName( s ).newInstance.asInstanceOf[CAEngineConstructor]
+														loadEngine( s )
 													}
 													catch
 													{
-														case e => showMessageDialog( mainFrame, "problem loading engine" )
+														case e: Exception => showMessageDialog( mainFrame, "problem loading engine" )
 													}
+
 											}
 										}
 									} ) )
