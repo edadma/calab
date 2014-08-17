@@ -8,7 +8,7 @@ import SwingUtilities._
 import JOptionPane._
 import javax.swing.filechooser._
 import javax.swing.event._
-import java.util.concurrent.{ScheduledThreadPoolExecutor, TimeUnit, ScheduledFuture}
+import java.util.concurrent.{ForkJoinPool, ScheduledThreadPoolExecutor, TimeUnit, ScheduledFuture}
 import java.net.URL
 
 import util.Random._
@@ -260,12 +260,14 @@ class RectangularGridFrame( settings: Map[Symbol, Any] = Map() ) extends JIntern
 					
 			def animate = threadPool.scheduleAtFixedRate( animateRunnable, 0, period, TimeUnit.MILLISECONDS )
 					
+			val forkJoinPool = new ForkJoinPool
+			
 			def generation = RectangularUniverse.synchronized
 			{
 			val futures =
 				for (r <- (0 until gridWidth).grouped(gridWidth/threads))
 					yield
-						threadPool.submit(
+						forkJoinPool.submit(
 							new Runnable
 							{
 								def run
