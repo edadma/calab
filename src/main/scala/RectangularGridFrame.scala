@@ -32,7 +32,7 @@ class RectangularGridFrame( settings: Map[Symbol, Any] = Map() ) extends JIntern
 			var period = 50
 			var engine: CAEngine = new LifeEngine( Set(3), Set(2, 3) )
 			var constructor: CAEngineConstructor = LifeEngine
-			var threads = 4
+			var threads = Runtime.getRuntime.availableProcessors
 			
 			for ((k, v) <- settings)
 				(k, v) match
