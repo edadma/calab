@@ -107,7 +107,7 @@ class RectangularGridFrame( settings: Map[Symbol, Any] = Map() ) extends JIntern
 							{
 								if (timer == null)
 								{
-									constructor( getText ) match
+									constructor.instance( getText ) match
 									{
 										case None =>
 										case Some( c ) =>
@@ -273,7 +273,7 @@ class RectangularGridFrame( settings: Map[Symbol, Any] = Map() ) extends JIntern
 								def run
 								{
 									for (x <- r; y <- 0 until gridHeight)
-										engine( x, y, RectangularUniverse )
+										engine.update( x, y, RectangularUniverse )
 								}
 							} )
 						

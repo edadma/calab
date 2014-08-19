@@ -11,10 +11,15 @@ trait CAEngineHelper
 	def string( s: String ) = s.map( _.toString.toInt ).toSet
 }
 
-trait CAEngineConstructor extends (String => Option[CAEngine])
-
-trait CAEngine extends ((Int, Int, Universe) => Unit)
+trait CAEngineConstructor
 {
+	def instance( rule: String ): Option[CAEngine]
+}
+
+trait CAEngine
+{
+	def update( x: Int, y: Int, u: Universe ): Unit
+	
 	def colors: Array[Color]
 	
 	def maxValue: Int
@@ -25,7 +30,7 @@ object LifeEngine extends CAEngineConstructor with CAEngineHelper
 	val RULE1 = """B(\d*)/S(\d*)"""r
 	val RULE2 = """(\d*)/(\d*)"""r
 	
-	def apply( rule: String ) =
+	def instance( rule: String ) =
 	{
 		if (RULE1.pattern.matcher( rule ).matches)
 		{
@@ -48,7 +53,7 @@ object LifeEngine extends CAEngineConstructor with CAEngineHelper
 
 class LifeEngine( birth: Set[Int], survival: Set[Int] ) extends CAEngine
 {
-	def apply( x: Int, y: Int, u: Universe )
+	def update( x: Int, y: Int, u: Universe )
 	{
 	var neighbours = 0
 	
@@ -75,7 +80,7 @@ object GenEngine extends CAEngineConstructor with CAEngineHelper
 {
 	val RULE = """(\d*)/(\d*)/(\d*)"""r
 	
-	def apply( rule: String ) =
+	def instance( rule: String ) =
 	{
 		if (RULE.pattern.matcher( rule ).matches)
 		{
@@ -94,7 +99,7 @@ class GenEngine( birth: Set[Int], survival: Set[Int], count: Int ) extends CAEng
 {
 	val maxValue = count - 1
 	
-	def apply( x: Int, y: Int, u: Universe )
+	def update( x: Int, y: Int, u: Universe )
 	{
 		def living( x: Int, y: Int ) = if (u.read( x, y ) == maxValue) 1 else 0
 		
