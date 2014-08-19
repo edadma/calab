@@ -3,17 +3,15 @@ package ca.hyperreal.calab
 
 object Options extends App
 {
-	type OptionFunction = PartialFunction[List[String], List[String]]
-
-	def apply( args: Array[String] )( options: OptionFunction )
+	def apply( args: Array[String] )( options: PartialFunction[List[String], List[String]] )
 	{
-		nextOption( args.toList, options )
+		def nextOption( list: List[String] ): Unit =
+			if (list != Nil)
+				nextOption( options(list) )
+
+		nextOption( args.toList )
 	}
 	
-	private def nextOption( list: List[String], options: OptionFunction ): Unit =
-		if (list != Nil)
-			nextOption( options(list), options )
-			
 //// test
 			
 	Options( args )
