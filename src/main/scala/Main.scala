@@ -196,6 +196,18 @@ object Main extends App
 									} ) )
 							add(
 								new JMenuItem(
+									new AbstractAction( s"150${by}150, 4 pixel squares, 20 frames per second" )
+									{
+										def actionPerformed( e: ActionEvent )
+										{
+										val grid = new RectangularGridFrame( Map('width -> 150, 'height -> 150, 'size -> 4, 'spacing -> 0, 'period -> 50) )
+										
+											desktop.add( grid )
+											grid.toFront
+										}
+									} ) )
+							add(
+								new JMenuItem(
 									new AbstractAction( s"20${by}20, large squares, half second period" )
 									{
 										def actionPerformed( e: ActionEvent )
