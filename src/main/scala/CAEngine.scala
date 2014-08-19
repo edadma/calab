@@ -6,19 +6,21 @@ import Color._
 import ca.hyperreal.color.HSL
 
 
-trait CAEngineConstructor extends (String => Option[CAEngine])
+trait CAEngineHelper
 {
 	def string( s: String ) = s.map( _.toString.toInt ).toSet
 }
 
+trait CAEngineConstructor extends (String => Option[CAEngine])
+
 trait CAEngine extends ((Int, Int, Universe) => Unit)
 {
-	def colors: Seq[Color]
+	def colors: Array[Color]
 	
 	def maxValue: Int
 }
 
-object LifeEngine extends CAEngineConstructor
+object LifeEngine extends CAEngineConstructor with CAEngineHelper
 {
 	val RULE1 = """B(\d*)/S(\d*)"""r
 	val RULE2 = """(\d*)/(\d*)"""r
@@ -62,14 +64,14 @@ class LifeEngine( birth: Set[Int], survival: Set[Int] ) extends CAEngine
 		u.write( x, y, if ((if (u.read( x, y ) == 0) birth else survival)( neighbours )) 1 else 0 )
 	}
 	
-	val colors = Seq( DARK_GRAY.darker.darker, WHITE )
+	val colors = Array( DARK_GRAY.darker.darker, WHITE )
 	
 	val maxValue = 1
 	
 	override def toString = s"""Life-like [birth: {${birth.toList.sorted.mkString(",")}}, survial: {${survival.toList.sorted.mkString(",")}}]"""
 }
 
-object GenEngine extends CAEngineConstructor
+object GenEngine extends CAEngineConstructor with CAEngineHelper
 {
 	val RULE = """(\d*)/(\d*)/(\d*)"""r
 	
@@ -120,7 +122,7 @@ class GenEngine( birth: Set[Int], survival: Set[Int], count: Int ) extends CAEng
 		}
 	}
 	
-	val colors = Seq( DARK_GRAY.darker.darker ) ++ HSL.shading( .6, 1, count - 2, .3 ) :+ WHITE
+	val colors = Array( DARK_GRAY.darker.darker ) ++ HSL.shading( .6, 1, count - 2, .3 ) :+ WHITE
 	
 	override def toString = s"""Generations [birth: {${birth.toList.sorted.mkString(",")}}, survial: {${survival.toList.sorted.mkString(",")}}, count: $count]"""
 }
