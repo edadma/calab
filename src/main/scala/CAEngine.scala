@@ -3,7 +3,7 @@ package ca.hyperreal.calab
 import java.awt.Color
 import Color._
 
-import ca.hyperreal.color.HSL
+import ca.hyperreal.hsl.HSL
 
 
 trait CAEngineHelper
